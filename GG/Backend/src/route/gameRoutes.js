@@ -11,7 +11,7 @@ router.get('/user-stats/:userId', async (req, res) => {
   try {
     const UserAccount = db.UserAccount;
     const user = await UserAccount.findByPk(req.params.userId, {
-      attributes: ['id', 'email', 'firstName', 'xp', 'level'],
+      attributes: ['id', 'email', 'firstName', 'xp', 'level', 'profileImage'],
     });
 
     if (!user) {
@@ -26,6 +26,7 @@ router.get('/user-stats/:userId', async (req, res) => {
       xp: user.xp,
       level: user.level,
       xpToNext,
+      profileImage: user.profileImage || null,
     });
   } catch (err) {
     console.error('Error fetching user stats:', err);

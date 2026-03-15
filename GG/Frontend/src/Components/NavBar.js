@@ -8,7 +8,7 @@ const NAV_LINKS = [
   { label: '🎮 Games',        path: '/GameSelection' },
   { label: '🔍 Find Friends', path: '/FriendSearch' },
   { label: '👥 Friends',      path: '/FriendsList' },
-  { label: '🤝 Teams',        path: '/TeamPage' },
+  { label: '🤝 Teams',        path: '/TeamLobby' },
   { label: '📅 Scheduler',    path: '/Scheduler' },
   { label: '🤖 AI Chat',      path: '/Assistant' },
   { label: '📝 Transcripts',  path: '/TranscriptView' },
@@ -33,9 +33,17 @@ function Navbar({ id }) {
     setMenuOpen(false);
     navigate({ pathname, search: createSearchParams({ id }).toString() });
   };
+
+    const PARENT_ROUTES = {
+    '/TeamLobby': ['/TeamPage', '/TeamCreate'],
+  };
  
-  const isActive = (path) =>
-    location.pathname === path ? 'nav-link active' : 'nav-link';
+  const isActive = (path) => {
+    if (location.pathname === path) return 'nav-link active';
+    const children = PARENT_ROUTES[path] || [];
+    if (children.includes(location.pathname)) return 'nav-link active';
+    return 'nav-link';
+  };
  
   const calculate = useCallback(() => {
     const navbar = navbarRef.current;

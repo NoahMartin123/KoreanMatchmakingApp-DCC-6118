@@ -1,6 +1,6 @@
 import axios from '../Utils/axios';
  
-export const handleCreateTeamApi = async (userId, teamName, logo) => {
+export const handleTeamCreateApi = async (userId, teamName, logo) => {
   const response = await axios.post('/api/teams/create', { userId, teamName, logo });
   return response;
 };
