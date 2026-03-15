@@ -9,51 +9,13 @@ import {
   handleDisbandTeamApi,
   handleGetInviteCodeApi,
 } from '../Services/teamService';
+import { handleGetTeamQuestsApi } from '../Services/questService';
 import './Team.css';
  
 const LOGO_OPTIONS = [
   '🏆','🔥','⚡','🌸','🐉','🦊','🌙','🎯',
   '🦁','🐺','🎮','🌊','🍀','🌟','🎸','🦋',
 ];
- 
-// Shared team challenges — tied to the games on the Game Selection screen
-const TEAM_CHALLENGES = [
-  {
-    id: 1,
-    title: 'Team Term Blitz',
-    desc: 'Members play Term Matching a combined 20 times',
-    goal: 20,
-    icon: '🃏',
-    xpReward: 500,
-  },
-  {
-    id: 2,
-    title: 'Grammar Champions',
-    desc: 'Any member scores 100% on Grammar Quiz 5 times',
-    goal: 5,
-    icon: '📝',
-    xpReward: 400,
-  },
-  {
-    id: 3,
-    title: 'Pronunciation Masters',
-    desc: 'Complete 10 Pronunciation Drill sessions as a team',
-    goal: 10,
-    icon: '🎙️',
-    xpReward: 600,
-  },
-  {
-    id: 4,
-    title: 'Speed Team',
-    desc: 'A member finishes Term Matching under 15 seconds 3 times',
-    goal: 3,
-    icon: '⚡',
-    xpReward: 300,
-  },
-];
- 
-// Mock progress — replace with real DB values once game completion tracking is added
-const MOCK_PROGRESS = { 1: 7, 2: 3, 3: 4, 4: 1 };
  
 function TeamPage() {
   const [search] = useSearchParams();
@@ -62,6 +24,7 @@ function TeamPage() {
  
   const [team, setTeam]             = useState(null);
   const [myRole, setMyRole]         = useState('member');
+  const [quests, setQuests]         = useState([]);
   const [loading, setLoading]       = useState(true);
   const [errMsg, setErrMsg]         = useState('');
   const [successMsg, setSuccessMsg] = useState('');
@@ -73,7 +36,7 @@ function TeamPage() {
   const [editLogo, setEditLogo] = useState('');
  
   // Active section tab
-  const [section, setSection] = useState('members'); // 'members' | 'challenges'
+  const [section, setSection] = useState('members'); // 'members' | 'quests'
  
   const fetchTeam = async () => {
     try {
@@ -86,6 +49,14 @@ function TeamPage() {
       setMyRole(data.myRole);
       setEditName(data.team.name);
       setEditLogo(data.team.logo);
+ 
+      // Fetch team quests from DB
+      try {
+        const questData = await handleGetTeamQuestsApi(data.team.id);
+        setQuests(questData.quests || []);
+      } catch (e) {
+        console.log('Could not load team quests:', e);
+      }
     } catch (e) {
       console.log(e);
     } finally {
@@ -156,15 +127,13 @@ function TeamPage() {
     (a, b) => (b.user?.xp ?? 0) - (a.user?.xp ?? 0)
   );
   const totalXP = sortedMembers.reduce((sum, m) => sum + (m.user?.xp ?? 0), 0);
-  const completedChallenges = TEAM_CHALLENGES.filter(
-    (c) => (MOCK_PROGRESS[c.id] ?? 0) >= c.goal
-  ).length;
+  const completedQuests = quests.filter((q) => q.completed).length;
  
   return (
     <div className="team-page-bg">
       
       <div className="team-center">
-        <Navbar id={id} />
+       <Navbar id={id} />
         {/* ── Team Header Card ── */}
         <div className="team-card">
           {editing ? (
@@ -210,8 +179,8 @@ function TeamPage() {
                 </div>
                 <div className="team-stat-divider" />
                 <div className="team-stat">
-                  <span className="team-stat-num">{completedChallenges}/{TEAM_CHALLENGES.length}</span>
-                  <span className="team-stat-lbl">Challenges</span>
+                  <span className="team-stat-num">{completedQuests}/{quests.length}</span>
+                  <span className="team-stat-lbl">Quests</span>
                 </div>
               </div>
  
@@ -258,10 +227,10 @@ function TeamPage() {
               👥 Members
             </button>
             <button
-              className={`team-section-tab ${section === 'challenges' ? 'team-section-tab-active' : ''}`}
-              onClick={() => setSection('challenges')}
+              className={`team-section-tab ${section === 'quests' ? 'team-section-tab-active' : ''}`}
+              onClick={() => setSection('quests')}
             >
-              🎯 Challenges
+              🎯 Quests
             </button>
           </div>
  
@@ -303,44 +272,49 @@ function TeamPage() {
               </>
             )}
  
-            {/* ── Shared Challenges ── */}
-            {section === 'challenges' && (
+            {/* ── Shared Quests ── */}
+            {section === 'quests' && (
               <>
                 <h2 className="team-section-title" style={{ marginBottom: 14 }}>
-                  🎯 Team Challenges
+                  🎯 Team Quests
                 </h2>
-                <div className="challenge-progress-list">
-                  {TEAM_CHALLENGES.map((challenge) => {
-                    const progress  = MOCK_PROGRESS[challenge.id] ?? 0;
-                    const pct       = Math.min(100, Math.round((progress / challenge.goal) * 100));
-                    const completed = progress >= challenge.goal;
-                    return (
-                      <div key={challenge.id} className={`challenge-progress-card ${completed ? 'challenge-done' : ''}`}>
-                        <div className="challenge-progress-top">
-                          <span className="challenge-progress-icon">{challenge.icon}</span>
-                          <div className="challenge-progress-info">
-                            <span className="challenge-progress-title">{challenge.title}</span>
-                            <span className="challenge-progress-desc">{challenge.desc}</span>
+                {quests.length === 0 ? (
+                  <p style={{ fontSize: 13, color: '#888', textAlign: 'center', margin: 0 }}>
+                    No quests available yet.
+                  </p>
+                ) : (
+                  <div className="quest-progress-list">
+                    {quests.map((quest) => {
+                      const progress  = quest.teamProgress ?? 0;
+                      const pct       = Math.min(100, Math.round((progress / quest.goal) * 100));
+                      const completed = quest.completed;
+                      return (
+                        <div key={quest.id} className={`quest-progress-card ${completed ? 'quest-done' : ''}`}>
+                          <div className="quest-progress-top">
+                            <div className="quest-progress-info">
+                              <span className="quest-progress-title">{quest.title}</span>
+                              <span className="quest-progress-desc">{quest.description}</span>
+                            </div>
+                            <span className="quest-progress-xp">+{quest.xpReward} XP</span>
+                            {completed && <span className="quest-done-badge">✓</span>}
                           </div>
-                          <span className="challenge-progress-xp">+{challenge.xpReward} XP</span>
-                          {completed && <span className="challenge-done-badge">✓</span>}
+                          <div className="quest-progress-bar-track">
+                            <div
+                              className="quest-progress-bar-fill"
+                              style={{
+                                width: `${pct}%`,
+                                background: completed ? '#16a34a' : '#6344A6',
+                              }}
+                            />
+                          </div>
+                          <span className="quest-progress-count">
+                            {progress} / {quest.goal}
+                          </span>
                         </div>
-                        <div className="challenge-progress-bar-track">
-                          <div
-                            className="challenge-progress-bar-fill"
-                            style={{
-                              width: `${pct}%`,
-                              background: completed ? '#16a34a' : '#6344A6',
-                            }}
-                          />
-                        </div>
-                        <span className="challenge-progress-count">
-                          {progress} / {challenge.goal}
-                        </span>
-                      </div>
-                    );
-                  })}
-                </div>
+                      );
+                    })}
+                  </div>
+                )}
               </>
             )}
  

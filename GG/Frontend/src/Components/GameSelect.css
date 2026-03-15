@@ -17,11 +17,11 @@
   background-color: #ffffff;
   border-radius: 10px;
   padding: 16px 20px;
-  margin-top: 20px;
   display: flex;
   align-items: center;
   gap: 16px;
   margin-bottom: 24px;
+  margin-top: 24px;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
   box-sizing: border-box;
 }
@@ -169,7 +169,7 @@
 }
  
 /* ── Challenges Panel (right column) ── */
-.challenges-panel {
+.quests-panel {
   width: 220px;
   flex-shrink: 0;
   background-color: #ffffff;
@@ -179,7 +179,7 @@
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
 }
  
-.challenges-title {
+.quests-title {
   font-family: 'DM Serif Display', serif;
   font-size: 16px;
   color: #364659;
@@ -187,19 +187,19 @@
   text-align: center;
 }
  
-.challenge-list {
+.quest-list {
   display: flex;
   flex-direction: column;
   gap: 14px;
 }
  
-.challenge-item {
+.quest-item {
   display: flex;
   align-items: flex-start;
   gap: 10px;
 }
  
-.challenge-text {
+.quest-text {
   flex: 1;
   font-size: 12px;
   color: #364659;
@@ -208,7 +208,7 @@
   font-family: 'HK Sentiments', sans-serif;
 }
  
-.challenge-checkbox {
+.quest-checkbox {
   width: 18px;
   height: 18px;
   border: 2px solid #6344A6;
@@ -222,7 +222,7 @@
   transition: background-color 0.15s ease;
 }
  
-.challenge-checkbox:checked {
+.quest-checkbox:checked {
   background-color: #6344A6;
   border-color: #6344A6;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2 6l3 3 5-5' stroke='white' stroke-width='2' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
@@ -231,7 +231,7 @@
   background-position: center;
 }
  
-.challenge-checkbox:focus {
+.quest-checkbox:focus {
   outline: none;
   box-shadow: 0 0 0 3px rgba(99, 68, 166, 0.3);
 }
@@ -252,5 +252,33 @@
  
 .error-state {
   color: #6344A6;
+}
+ 
+/* ── Challenge progress bars ── */
+.quest-progress-bar-track {
+  width: 100%;
+  height: 6px;
+  background-color: #e9e4f5;
+  border-radius: 4px;
+  overflow: hidden;
+}
+ 
+.quest-progress-bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.5s ease;
+}
+ 
+.quest-done-check {
+  width: 18px;
+  height: 18px;
+  background-color: #16a34a;
+  color: #fff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: bold;
 }
  

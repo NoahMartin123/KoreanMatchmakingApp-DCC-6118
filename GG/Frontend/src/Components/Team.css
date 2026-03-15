@@ -553,14 +553,14 @@
 }
  
 /* ── Shared challenge cards ── */
-.challenge-progress-list {
+.quest-progress-list {
   display: flex;
   flex-direction: column;
   gap: 14px;
   width: 100%;
 }
  
-.challenge-progress-card {
+.quest-progress-card {
   background-color: #f9f9f9;
   border: 1px solid #eee;
   border-radius: 10px;
@@ -571,42 +571,42 @@
   transition: border-color 0.2s;
 }
  
-.challenge-done {
+.quest-done {
   border-color: #86efac;
   background-color: #f0fdf4;
 }
  
-.challenge-progress-top {
+.quest-progress-top {
   display: flex;
   align-items: flex-start;
   gap: 10px;
 }
  
-.challenge-progress-icon {
+.quest-progress-icon {
   font-size: 22px;
   flex-shrink: 0;
 }
  
-.challenge-progress-info {
+.quest-progress-info {
   flex: 1;
   display: flex;
   flex-direction: column;
   gap: 2px;
 }
  
-.challenge-progress-title {
+.quest-progress-title {
   font-size: 14px;
   font-weight: bold;
   color: #364659;
 }
  
-.challenge-progress-desc {
+.quest-progress-desc {
   font-size: 12px;
   color: #888;
   line-height: 1.4;
 }
  
-.challenge-progress-xp {
+.quest-progress-xp {
   font-size: 12px;
   font-weight: bold;
   color: #6344A6;
@@ -617,7 +617,7 @@
   height: fit-content;
 }
  
-.challenge-done-badge {
+.quest-done-badge {
   width: 22px;
   height: 22px;
   background-color: #16a34a;
@@ -631,7 +631,7 @@
   flex-shrink: 0;
 }
  
-.challenge-progress-bar-track {
+.quest-progress-bar-track {
   width: 100%;
   height: 8px;
   background-color: #e9e4f5;
@@ -639,16 +639,15 @@
   overflow: hidden;
 }
  
-.challenge-progress-bar-fill {
+.quest-progress-bar-fill {
   height: 100%;
   border-radius: 4px;
   transition: width 0.5s ease;
 }
  
-.challenge-progress-count {
+.quest-progress-count {
   font-size: 11px;
   color: #999;
   font-weight: bold;
   text-align: right;
 }
- 
