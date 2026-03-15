@@ -11,6 +11,8 @@ import {
 } from '../Services/teamService';
 import { handleGetTeamQuestsApi } from '../Services/questService';
 import './Team.css';
+import ImageUpload from './ImageUpload';
+import { handleUploadTeamImageApi, handleRemoveTeamImageApi, getImageUrl } from '../Services/uploadImageService';
  
 const LOGO_OPTIONS = [
   '🏆','🔥','⚡','🌸','🐉','🦊','🌙','🎯',
@@ -49,6 +51,7 @@ function TeamPage() {
       setMyRole(data.myRole);
       setEditName(data.team.name);
       setEditLogo(data.team.logo);
+      console.log('Team data:', data.team); // debug — check teamImage value in browser console
  
       // Fetch team quests from DB
       try {
@@ -138,6 +141,22 @@ function TeamPage() {
         <div className="team-card">
           {editing ? (
             <>
+            <ImageUpload
+                currentImage={team.teamImage ? getImageUrl(team.teamImage) : null}
+                onUpload={async (file) => {
+                  const result = await handleUploadTeamImageApi(id, file);
+                  fetchTeam();
+                  return result;
+                }}
+                onRemove={async () => {
+                  await handleRemoveTeamImageApi(id);
+                  fetchTeam();
+                }}
+                placeholder={editLogo}
+                shape="square"
+                size={72}
+                label="Team Image (optional)"
+            />
               <div className="logo-grid" style={{ marginBottom: 12 }}>
                 {LOGO_OPTIONS.map((emoji) => (
                   <button
@@ -163,7 +182,17 @@ function TeamPage() {
             </>
           ) : (
             <>
-              <div className="team-card-logo">{team.logo}</div>
+              <div className="team-card-logo">
+                {team.teamImage ? (
+                  <img
+                    src={getImageUrl(team.teamImage)}
+                    alt="Team"
+                    style={{ width: 72, height: 72, objectFit: 'cover', borderRadius: 14, display: 'block' }}
+                  />
+                ) : (
+                  team.logo
+                )}
+              </div>
               <h1 className="team-card-title">{team.name}</h1>
  
               {/* Stats row */}

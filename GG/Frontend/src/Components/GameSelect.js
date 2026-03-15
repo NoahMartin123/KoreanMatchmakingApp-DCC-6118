@@ -6,6 +6,7 @@ import './GameSelect.css';
 import { handleGetUserStatsApi } from '../Services/gameSelectionService';
 import Navbar from './NavBar';
 import { handleGetUserQuestsApi } from '../Services/questService';
+import { getImageUrl } from '../Services/uploadImageService';
 
 const XP_PER_LEVEL = 500; // Must match the value in gameRoutes.js
 
@@ -21,6 +22,7 @@ function GameSelect() {
   const [username, setUsername] = useState('');
   const [difficulty, setDifficulty] = useState('Beginner');
   const [completedChallenges, setCompletedChallenges] = useState([]);
+  const [profileImage, setProfileImage] = useState(null);
   const [quests, setQuests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -74,7 +76,17 @@ function GameSelect() {
  
       {/* ── Profile / Level Banner ── */}
       <div className="profile-banner">
-        <div className="profile-avatar">{getInitial()}</div>
+        <div className="profile-avatar">
+          {profileImage ? (
+            <img
+              src={getImageUrl(profileImage)}
+              alt="Profile"
+              style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }}
+            />
+          ) : (
+            getInitial()
+          )}
+          </div>
  
         <div className="profile-details">
           <p className="profile-level">Level: {level}</p>
