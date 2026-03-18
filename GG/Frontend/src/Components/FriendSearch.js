@@ -20,6 +20,10 @@ import {
   handleGetUserInterests,
   handleGetUserAvailability,
   handleAddTrueFriend,
+  handleAcceptFriendRequest,
+  handleRejectFriendRequest,
+  handleGetMyFriendStatuses,
+  handleGetPendingRequests,
 } from '../Services/userService';
 import Navbar from './NavBar';
 
@@ -69,6 +73,8 @@ const FriendSearch = () => {
   const [selectedMbti, setSelectedMbti] = useState([]);
   const [selectedZodiac, setSelectedZodiac] = useState([]);
   const [activeFilter, setActiveFilter] = useState(0);
+  const [friendStatuses, setFriendStatuses] = useState([]);
+  const [pendingRequests, setPendingRequests] = useState([]);
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -87,7 +93,7 @@ const FriendSearch = () => {
           })
         );
 
-        const visibleUsers = mergedUsers.filter((u) => u.visibility === 'Show');
+        const visibleUsers = mergedUsers.filter((u) => u.visibility === 'Show' && String(u.id) !== String(id));
         setUserNames(visibleUsers);
         setAllUserNames(visibleUsers);
         setCurrentUser(getUserData());
@@ -110,6 +116,19 @@ const FriendSearch = () => {
       } catch { setAllInterests([]); }
     };
     fetchInterests();
+
+    const fetchStatuses = async () => {
+      if (!id) return;
+      try {
+        const [statusRes, requestRes] = await Promise.all([
+          handleGetMyFriendStatuses(id),
+          handleGetPendingRequests(id),
+        ]);
+        setFriendStatuses(statusRes?.statuses || []);
+        setPendingRequests(requestRes?.requests || []);
+      } catch { }
+    };
+    fetchStatuses();
   }, [id]);
 
   useEffect(() => {
@@ -128,13 +147,57 @@ const FriendSearch = () => {
 
   const flash = (msg) => { setSuccessMessage(msg); setTimeout(() => setSuccessMessage(''), 2500); };
 
-  const handleQuickAddFriend = async (user) => {
+  const getStatusForUser = (userId) => {
+    const rel = friendStatuses.find(s =>
+      Number(s.user1_id) === Number(userId) || Number(s.user2_id) === Number(userId)
+    );
+    if (!rel) return 'none';
+    if (rel.status === 'accepted') return 'accepted';
+    return Number(rel.requester_id) === Number(id) ? 'pending_sent' : 'pending_received';
+  };
+
+  const handleSendRequest = async (user) => {
     try {
       await handleAddTrueFriend(Number(id), Number(user.id));
-      flash(`Added ${user.firstName} ${user.lastName} to your friends!`);
+      setFriendStatuses(prev => [...prev, {
+        user1_id: Math.min(Number(id), Number(user.id)),
+        user2_id: Math.max(Number(id), Number(user.id)),
+        status: 'pending',
+        requester_id: Number(id),
+      }]);
+      flash(`Friend request sent to ${user.firstName}!`);
     } catch (err) {
       const msg = err?.response?.data?.error || err.message;
-      flash(msg === 'Friendship already exists' ? 'Already friends!' : `Could not add friend: ${msg}`);
+      flash(msg === 'Friendship already exists' ? 'Already friends!' : `Could not send request: ${msg}`);
+    }
+  };
+
+  const handleAccept = async (requester) => {
+    try {
+      await handleAcceptFriendRequest(Number(id), Number(requester.id));
+      setFriendStatuses(prev => prev.map(s =>
+        (Number(s.user1_id) === Math.min(Number(id), Number(requester.id)) &&
+         Number(s.user2_id) === Math.max(Number(id), Number(requester.id)))
+          ? { ...s, status: 'accepted' } : s
+      ));
+      setPendingRequests(prev => prev.filter(r => Number(r.id) !== Number(requester.id)));
+      flash(`You are now friends with ${requester.firstName}!`);
+    } catch (err) {
+      flash('Could not accept request.');
+    }
+  };
+
+  const handleDecline = async (requester) => {
+    try {
+      await handleRejectFriendRequest(Number(id), Number(requester.id));
+      setFriendStatuses(prev => prev.filter(s =>
+        !(Number(s.user1_id) === Math.min(Number(id), Number(requester.id)) &&
+          Number(s.user2_id) === Math.max(Number(id), Number(requester.id)))
+      ));
+      setPendingRequests(prev => prev.filter(r => Number(r.id) !== Number(requester.id)));
+      flash(`Request from ${requester.firstName} declined.`);
+    } catch (err) {
+      flash('Could not decline request.');
     }
   };
 
@@ -342,6 +405,30 @@ const FriendSearch = () => {
           )}
         </div>
 
+        {/* Incoming requests card */}
+        {pendingRequests.length > 0 && (
+          <div className="fs-card">
+            <h2 className="fs-card-title" style={{ fontSize: 18 }}>Incoming Requests</h2>
+            <div className="fs-results-list">
+              {pendingRequests.map((requester, i) => (
+                <div key={i} className="fs-user-row">
+                  <div className="fs-avatar">
+                    {requester.firstName ? requester.firstName.charAt(0).toUpperCase() : '?'}
+                  </div>
+                  <div className="fs-user-info">
+                    <div className="fs-user-name">{requester.firstName} {requester.lastName}</div>
+                    <div className="fs-user-meta"><span>{requester.email}</span></div>
+                  </div>
+                  <div className="fs-request-actions">
+                    <button className="fs-btn-accept" onClick={() => handleAccept(requester)}>Accept</button>
+                    <button className="fs-btn-decline" onClick={() => handleDecline(requester)}>Decline</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Results card */}
         <div className="fs-card">
           <div className="fs-results-header">
@@ -379,10 +466,29 @@ const FriendSearch = () => {
                     <span className="fs-score-pill">{user.score}</span>
                   )}
 
-                  <button className="fs-add-btn" title="Add friend"
-                    onClick={(e) => { e.stopPropagation(); handleQuickAddFriend(user); }}>
-                    <FiUserPlus size={16} />
-                  </button>
+                  {(() => {
+                    const status = getStatusForUser(user.id);
+                    if (status === 'accepted') {
+                      return <span className="fs-status-badge fs-status-friends">Friends</span>;
+                    }
+                    if (status === 'pending_sent') {
+                      return <span className="fs-status-badge fs-status-pending">Requested</span>;
+                    }
+                    if (status === 'pending_received') {
+                      return (
+                        <div className="fs-request-actions">
+                          <button className="fs-btn-accept" onClick={(e) => { e.stopPropagation(); handleAccept(user); }}>Accept</button>
+                          <button className="fs-btn-decline" onClick={(e) => { e.stopPropagation(); handleDecline(user); }}>Decline</button>
+                        </div>
+                      );
+                    }
+                    return (
+                      <button className="fs-add-btn" title="Send friend request"
+                        onClick={(e) => { e.stopPropagation(); handleSendRequest(user); }}>
+                        <FiUserPlus size={16} />
+                      </button>
+                    );
+                  })()}
                 </div>
               ))}
             </div>

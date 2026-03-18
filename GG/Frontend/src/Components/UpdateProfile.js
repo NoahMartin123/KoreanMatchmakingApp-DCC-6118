@@ -212,12 +212,8 @@ function UpdateProfile() {
     loadAllData();
   }, [id]);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleSubmit = async () => {
     setErrMsg('');
-    if (!nativeLanguage || !targetLanguage || !targetLanguageProficiency || !age || !profession) {
-      setError(true); return;
-    }
     setSubmitted(true); setError(false);
     try {
       await handleProfileUpdateAPI(id, nativeLanguage, targetLanguage, targetLanguageProficiency, age, gender, profession, mbti, zodiac, defaultTimeZone, visibility, learningGoal, communicationStyle, commitmentLevel);
@@ -230,20 +226,33 @@ function UpdateProfile() {
     }
   };
 
-  const handleBack = (e) => {
-    e.preventDefault();
+  const handleBack = () => {
     navigate({ pathname: "/Dashboard", search: createSearchParams({ id }).toString() });
   };
 
   const STEPS = [
     { title: 'Basics', subtitle: 'Pick your languages + level' },
     { title: 'About you', subtitle: 'A few quick details' },
-    { title: 'Schedule', subtitle: 'Timezone + when you’re free' },
+    { title: 'Schedule', subtitle: 'Timezone + when you\'re free' },
     { title: 'Style', subtitle: 'How you like to learn' },
   ];
 
-  const nextStep = () => setStep(s => Math.min(s + 1, STEPS.length - 1));
-  const prevStep = () => setStep(s => Math.max(s - 1, 0));
+  const stepRequiredFields = {
+    0: [nativeLanguage, targetLanguage, targetLanguageProficiency],
+    1: [age, profession],
+  };
+
+  const handleNext = () => {
+    const required = stepRequiredFields[step];
+    if (required && required.some(v => !v)) {
+      setError(true);
+      return;
+    }
+    setError(false);
+    setStep(s => Math.min(s + 1, STEPS.length - 1));
+  };
+
+  const prevStep = () => { setError(false); setStep(s => Math.max(s - 1, 0)); };
   const progressPct = Math.round(((step + 1) / STEPS.length) * 100);
 
   if (!dataLoaded) {
@@ -287,7 +296,7 @@ function UpdateProfile() {
             {errMsg && <div className="up-error">{errMsg}</div>}
           </div>
 
-          <form className="up-form" onSubmit={handleSubmit}>
+          <form className="up-form" onSubmit={(e) => e.preventDefault()}>
 
             <div className="up-group">
               <ProfileImageSection id={id} currentImage={profileImage} onImageChange={(path) => setProfileImage(path)} />
@@ -366,7 +375,7 @@ function UpdateProfile() {
                   </div>
                   <div className="up-group" style={{ gridColumn: '1 / -1' }}>
                     <label className="up-label">Availability</label>
-                    <Select styles={selectStyles} isMulti options={availabilityOptions} value={availability} onChange={s => setAvailability(s || [])} placeholder="Pick a few times you’re usually free..." />
+                    <Select styles={selectStyles} isMulti options={availabilityOptions} value={availability} onChange={s => setAvailability(s || [])} placeholder="Pick a few times you're usually free..." />
                   </div>
                 </div>
               </div>
@@ -460,11 +469,11 @@ function UpdateProfile() {
               </button>
 
               {step < STEPS.length - 1 ? (
-                <button className="up-btn-primary" type="button" onClick={nextStep}>
+                <button className="up-btn-primary" type="button" onClick={handleNext}>
                   Continue
                 </button>
               ) : (
-                <button className="up-btn-primary" type="submit">
+                <button className="up-btn-primary" type="button" onClick={handleSubmit}>
                   Save & Finish
                 </button>
               )}

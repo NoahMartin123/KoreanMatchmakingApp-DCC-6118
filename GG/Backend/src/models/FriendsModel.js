@@ -14,7 +14,16 @@ export default (sequelize, DataTypes) => {
   };
   FriendsModel.init({
     user1_ID: DataTypes.INTEGER,
-    user2_ID: DataTypes.INTEGER
+    user2_ID: DataTypes.INTEGER,
+    status: {
+      type: DataTypes.ENUM('pending', 'accepted'),
+      allowNull: false,
+      defaultValue: 'accepted',
+    },
+    requester_id: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+    },
   }, {
     sequelize,
     modelName: 'FriendsModel',

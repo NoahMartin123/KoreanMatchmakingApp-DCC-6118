@@ -336,3 +336,6 @@
 }
 @keyframes tm-grow { from { width: 0; } }
 @keyframes tm-count { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+.tm-difficulty-locked { font-size: 13px; color: #6344A6; font-weight: bold; padding: 6px 14px; background: #f0ebff; border-radius: 6px; }
+.tm-challenge-notice { background: #f0ebff; border: 1px solid #c4b5fd; border-radius: 8px; padding: 12px 16px; color: #6344A6; font-size: 14px; text-align: center; margin: 12px 0; }

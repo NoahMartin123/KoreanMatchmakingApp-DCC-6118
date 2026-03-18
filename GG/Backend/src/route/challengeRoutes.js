@@ -2,6 +2,20 @@ import express from 'express';
 import db from '../models/index.js';
 
 const router = express.Router();
+const CHALLENGE_XP_BONUS = 25;
+const XP_PER_LEVEL = 500;
+
+async function awardXp(userId, xpAmount) {
+  const user = await db.UserAccount.findByPk(userId);
+  if (!user) return;
+  let newXp = (user.xp || 0) + xpAmount;
+  let newLevel = user.level || 1;
+  while (newXp >= newLevel * XP_PER_LEVEL) {
+    newXp -= newLevel * XP_PER_LEVEL;
+    newLevel++;
+  }
+  await user.update({ xp: newXp, level: newLevel });
+}
 
 // POST /api/challenges  — send a challenge to another user
 router.post('/', async (req, res) => {
@@ -36,8 +50,41 @@ router.get('/user/:userId', async (req, res) => {
     const { userId } = req.params;
     const { status } = req.query;
 
+    const now = new Date();
+    const expireThreshold = new Date(now - 24 * 60 * 60 * 1000);   // 24 hours ago
+    const cleanupThreshold = new Date(now - 7 * 24 * 60 * 60 * 1000); // 7 days ago
+
+    // Auto-expire pending challenges older than 24 hours (no response)
+    await db.Challenge.update(
+      { status: 'expired' },
+      {
+        where: {
+          status: 'pending',
+          createdAt: { [Op.lt]: expireThreshold },
+        },
+      }
+    );
+
+    // Auto-expire accepted/in_progress challenges where opponent hasn't played in 24 hours
+    await db.Challenge.update(
+      { status: 'expired' },
+      {
+        where: {
+          status: { [Op.in]: ['accepted', 'in_progress'] },
+          updatedAt: { [Op.lt]: expireThreshold },
+        },
+      }
+    );
+
     const where = {
       [Op.or]: [{ challengerId: userId }, { challengedId: userId }],
+      // Hide completed challenges older than 7 days
+      [Op.not]: {
+        [Op.and]: [
+          { status: 'completed' },
+          { completedAt: { [Op.lt]: cleanupThreshold } },
+        ],
+      },
     };
     if (status) where.status = status;
 
@@ -145,6 +192,11 @@ router.post('/:id/submit-score', async (req, res) => {
         winnerId,
         completedAt: new Date(),
       });
+
+      // Award bonus XP to winner
+      if (winnerId) {
+        await awardXp(winnerId, CHALLENGE_XP_BONUS);
+      }
     }
 
     return res.status(200).json({ challenge });
