@@ -30,7 +30,7 @@ function TermMatching() {
     setActivePairId(null);
     setChallengeSubmitted(false);
     try {
-      const data = await startTermMatching(id, diff || difficulty);
+      const data = await startTermMatching(id, diff || difficulty, 6, challengeId);
       setPairs(data.pairs || []);
       setEnglishOptions(data.englishOptions || []);
     } catch (err) {

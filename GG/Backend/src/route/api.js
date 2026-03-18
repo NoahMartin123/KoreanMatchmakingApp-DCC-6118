@@ -92,10 +92,9 @@ const initAPIRoute = (app) => {
     router.post('/addTrueFriend', APIController.addTrueFriend);
     router.delete('/removeTrueFriend', APIController.removeTrueFriend);
     router.get('/friends/:userId', APIController.getTrueFriendsList);
-    router.post('/acceptFriendRequest', APIController.acceptFriendRequest);
-    router.post('/rejectFriendRequest', APIController.rejectFriendRequest);
-    router.get('/friendStatuses/:userId', APIController.getMyFriendStatuses);
-    router.get('/pendingRequests/:userId', APIController.getPendingRequests);
+    router.get('/friendRequests/:userId', APIController.getFriendRequests);
+    router.put('/friendRequests/:requestId/accept', APIController.acceptFriendRequest);
+    router.put('/friendRequests/:requestId/reject', APIController.rejectFriendRequest);
 
     router.get("/api/availability/:userId", APIController.getUserAvailability);
 

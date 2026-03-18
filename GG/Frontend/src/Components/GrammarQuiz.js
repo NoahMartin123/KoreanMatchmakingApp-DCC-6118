@@ -29,7 +29,7 @@ function GrammarQuiz() {
     setAnswers([]);
     setChallengeSubmitted(false);
     try {
-      const data = await startGrammarQuiz(id, diff || difficulty);
+      const data = await startGrammarQuiz(id, diff || difficulty, 5, challengeId);
       setQuestions(data.questions || []);
       setAnswers(new Array((data.questions || []).length).fill(null));
     } catch (err) {

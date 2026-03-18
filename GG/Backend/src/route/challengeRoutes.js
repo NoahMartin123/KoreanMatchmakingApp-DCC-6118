@@ -17,6 +17,58 @@ async function awardXp(userId, xpAmount) {
   await user.update({ xp: newXp, level: newLevel });
 }
 
+async function areUsersFriends(userIdA, userIdB) {
+  const { QueryTypes } = db.Sequelize;
+  const rows = await db.sequelize.query(
+    `
+      SELECT 1
+      FROM FriendsModel
+      WHERE (user1_ID = :userIdA AND user2_ID = :userIdB)
+         OR (user1_ID = :userIdB AND user2_ID = :userIdA)
+      LIMIT 1
+    `,
+    {
+      replacements: { userIdA, userIdB },
+      type: QueryTypes.SELECT,
+    }
+  );
+  return rows.length > 0;
+}
+
+async function getFriendOptions(userId) {
+  const { QueryTypes } = db.Sequelize;
+  return db.sequelize.query(
+    `
+      SELECT DISTINCT u.id, u.firstName, u.lastName, u.email
+      FROM FriendsModel f
+      JOIN UserAccount u ON (u.id = f.user2_ID AND f.user1_ID = :userId)
+                       OR (u.id = f.user1_ID AND f.user2_ID = :userId)
+      ORDER BY u.firstName ASC, u.lastName ASC, u.id ASC
+    `,
+    { replacements: { userId }, type: QueryTypes.SELECT }
+  );
+}
+
+// GET /api/challenges/friends/:userId  — friend list formatted for opponent selector
+router.get('/friends/:userId', async (req, res) => {
+  try {
+    const userId = Number(req.params.userId);
+    if (!userId) return res.status(400).json({ error: 'userId is required' });
+
+    const friends = await getFriendOptions(userId);
+    const options = friends.map((f) => ({
+      id: f.id,
+      label: `${f.firstName || ''} ${f.lastName || ''}`.trim() || `User #${f.id}`,
+      email: f.email || null,
+    }));
+
+    return res.status(200).json({ friends: options });
+  } catch (err) {
+    console.error('Error fetching challenge friend options:', err);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // POST /api/challenges  — send a challenge to another user
 router.post('/', async (req, res) => {
   try {
@@ -26,6 +78,19 @@ router.post('/', async (req, res) => {
     }
     if (Number(challengerId) === Number(challengedId)) {
       return res.status(400).json({ error: 'Cannot challenge yourself' });
+    }
+
+    const [challenger, challenged] = await Promise.all([
+      db.UserAccount.findByPk(challengerId),
+      db.UserAccount.findByPk(challengedId),
+    ]);
+    if (!challenger || !challenged) {
+      return res.status(404).json({ error: 'One or both users were not found' });
+    }
+
+    const isFriend = await areUsersFriends(Number(challengerId), Number(challengedId));
+    if (!isFriend) {
+      return res.status(403).json({ error: 'You can only challenge users in your friends list' });
     }
 
     const challenge = await db.Challenge.create({
@@ -124,10 +189,15 @@ router.get('/:id', async (req, res) => {
 // PUT /api/challenges/:id/accept  — accept a challenge
 router.put('/:id/accept', async (req, res) => {
   try {
+    const { userId } = req.body || {};
     const challenge = await db.Challenge.findByPk(req.params.id);
     if (!challenge) return res.status(404).json({ error: 'Challenge not found' });
     if (challenge.status !== 'pending') {
       return res.status(400).json({ error: `Challenge is already ${challenge.status}` });
+    }
+
+    if (userId && Number(userId) !== Number(challenge.challengedId)) {
+      return res.status(403).json({ error: 'Only the challenged user can accept this challenge' });
     }
 
     await challenge.update({ status: 'accepted' });
@@ -141,10 +211,15 @@ router.put('/:id/accept', async (req, res) => {
 // PUT /api/challenges/:id/decline  — decline a challenge
 router.put('/:id/decline', async (req, res) => {
   try {
+    const { userId } = req.body || {};
     const challenge = await db.Challenge.findByPk(req.params.id);
     if (!challenge) return res.status(404).json({ error: 'Challenge not found' });
     if (challenge.status !== 'pending') {
       return res.status(400).json({ error: `Challenge is already ${challenge.status}` });
+    }
+
+    if (userId && Number(userId) !== Number(challenge.challengedId)) {
+      return res.status(403).json({ error: 'Only the challenged user can decline this challenge' });
     }
 
     await challenge.update({ status: 'declined' });
@@ -192,7 +267,7 @@ router.post('/:id/submit-score', async (req, res) => {
         winnerId,
         completedAt: new Date(),
       });
-
+      await challenge.reload();
       // Award bonus XP to winner
       if (winnerId) {
         await awardXp(winnerId, CHALLENGE_XP_BONUS);

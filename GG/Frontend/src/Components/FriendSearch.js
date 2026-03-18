@@ -20,10 +20,9 @@ import {
   handleGetUserInterests,
   handleGetUserAvailability,
   handleAddTrueFriend,
-  handleAcceptFriendRequest,
-  handleRejectFriendRequest,
-  handleGetMyFriendStatuses,
-  handleGetPendingRequests,
+  handleGetFriendRequests,
+  handleAcceptFriendRequestByRequestId,
+  handleRejectFriendRequestByRequestId,
 } from '../Services/userService';
 import Navbar from './NavBar';
 
@@ -66,6 +65,7 @@ const FriendSearch = () => {
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [profileBlockedMessage, setProfileBlockedMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const [selectedAvailability, setSelectedAvailability] = useState(null);
   const [allInterests, setAllInterests] = useState([]);
@@ -73,13 +73,12 @@ const FriendSearch = () => {
   const [selectedMbti, setSelectedMbti] = useState([]);
   const [selectedZodiac, setSelectedZodiac] = useState([]);
   const [activeFilter, setActiveFilter] = useState(0);
-  const [friendStatuses, setFriendStatuses] = useState([]);
-  const [pendingRequests, setPendingRequests] = useState([]);
+  const [friendRequests, setFriendRequests] = useState({ incoming: [], outgoing: [] });
 
   useEffect(() => {
     const fetchUserData = async () => {
       try {
-        const userResponse = await handleGetUserNamesApi();
+        const userResponse = await handleGetUserNamesApi(id);
         const profilesResponse = await handleGetUserPreferencesApi();
 
         const mergedUsers = await Promise.all(
@@ -93,13 +92,21 @@ const FriendSearch = () => {
           })
         );
 
-        const visibleUsers = mergedUsers.filter((u) => u.visibility === 'Show' && String(u.id) !== String(id));
+        const visibleUsers = mergedUsers.filter((u) => u.visibility === 'Show' && Number(u.id) !== Number(id));
         setUserNames(visibleUsers);
         setAllUserNames(visibleUsers);
         setCurrentUser(getUserData());
         setLoading(false);
       } catch (err) {
-        setError(err);
+        const code = err?.response?.data?.code;
+        if (code === 'PROFILE_INCOMPLETE') {
+          setProfileBlockedMessage(
+            err?.response?.data?.message || 'Complete your profile before finding friends.'
+          );
+          setError(null);
+        } else {
+          setError(err);
+        }
         setLoading(false);
       }
     };
@@ -117,18 +124,17 @@ const FriendSearch = () => {
     };
     fetchInterests();
 
-    const fetchStatuses = async () => {
+    const fetchRequests = async () => {
       if (!id) return;
       try {
-        const [statusRes, requestRes] = await Promise.all([
-          handleGetMyFriendStatuses(id),
-          handleGetPendingRequests(id),
-        ]);
-        setFriendStatuses(statusRes?.statuses || []);
-        setPendingRequests(requestRes?.requests || []);
+        const res = await handleGetFriendRequests(id);
+        setFriendRequests({
+          incoming: Array.isArray(res?.incoming) ? res.incoming : [],
+          outgoing: Array.isArray(res?.outgoing) ? res.outgoing : [],
+        });
       } catch { }
     };
-    fetchStatuses();
+    fetchRequests();
   }, [id]);
 
   useEffect(() => {
@@ -147,55 +153,50 @@ const FriendSearch = () => {
 
   const flash = (msg) => { setSuccessMessage(msg); setTimeout(() => setSuccessMessage(''), 2500); };
 
-  const getStatusForUser = (userId) => {
-    const rel = friendStatuses.find(s =>
-      Number(s.user1_id) === Number(userId) || Number(s.user2_id) === Number(userId)
-    );
-    if (!rel) return 'none';
-    if (rel.status === 'accepted') return 'accepted';
-    return Number(rel.requester_id) === Number(id) ? 'pending_sent' : 'pending_received';
+  const getRequestStatusForUser = (userId) => {
+    const incoming = friendRequests.incoming.find(r => Number(r.requesterId) === Number(userId));
+    if (incoming) return { status: 'pending_received', requestId: incoming.id };
+    const outgoing = friendRequests.outgoing.find(r => Number(r.recipientId) === Number(userId));
+    if (outgoing) return { status: 'pending_sent', requestId: outgoing.id };
+    return { status: 'none', requestId: null };
   };
 
   const handleSendRequest = async (user) => {
     try {
       await handleAddTrueFriend(Number(id), Number(user.id));
-      setFriendStatuses(prev => [...prev, {
-        user1_id: Math.min(Number(id), Number(user.id)),
-        user2_id: Math.max(Number(id), Number(user.id)),
-        status: 'pending',
-        requester_id: Number(id),
-      }]);
-      flash(`Friend request sent to ${user.firstName}!`);
+      flash(`Friend request sent to ${user.firstName} ${user.lastName}`);
     } catch (err) {
-      const msg = err?.response?.data?.error || err.message;
-      flash(msg === 'Friendship already exists' ? 'Already friends!' : `Could not send request: ${msg}`);
+      const msg = err?.response?.data?.error || err.message || 'Could not send request';
+      flash(`Could not add friend: ${msg}`);
     }
   };
 
-  const handleAccept = async (requester) => {
+  const refreshRequests = async () => {
+    if (!id) return;
     try {
-      await handleAcceptFriendRequest(Number(id), Number(requester.id));
-      setFriendStatuses(prev => prev.map(s =>
-        (Number(s.user1_id) === Math.min(Number(id), Number(requester.id)) &&
-         Number(s.user2_id) === Math.max(Number(id), Number(requester.id)))
-          ? { ...s, status: 'accepted' } : s
-      ));
-      setPendingRequests(prev => prev.filter(r => Number(r.id) !== Number(requester.id)));
-      flash(`You are now friends with ${requester.firstName}!`);
+      const res = await handleGetFriendRequests(id);
+      setFriendRequests({
+        incoming: Array.isArray(res?.incoming) ? res.incoming : [],
+        outgoing: Array.isArray(res?.outgoing) ? res.outgoing : [],
+      });
+    } catch { }
+  };
+
+  const handleAccept = async (requestId, requesterName) => {
+    try {
+      await handleAcceptFriendRequestByRequestId(requestId, Number(id));
+      await refreshRequests();
+      flash(`You are now friends with ${requesterName}!`);
     } catch (err) {
       flash('Could not accept request.');
     }
   };
 
-  const handleDecline = async (requester) => {
+  const handleDecline = async (requestId, requesterName) => {
     try {
-      await handleRejectFriendRequest(Number(id), Number(requester.id));
-      setFriendStatuses(prev => prev.filter(s =>
-        !(Number(s.user1_id) === Math.min(Number(id), Number(requester.id)) &&
-          Number(s.user2_id) === Math.max(Number(id), Number(requester.id)))
-      ));
-      setPendingRequests(prev => prev.filter(r => Number(r.id) !== Number(requester.id)));
-      flash(`Request from ${requester.firstName} declined.`);
+      await handleRejectFriendRequestByRequestId(requestId, Number(id));
+      await refreshRequests();
+      flash(`Request from ${requesterName} declined.`);
     } catch (err) {
       flash('Could not decline request.');
     }
@@ -302,6 +303,14 @@ const FriendSearch = () => {
   };
 
   if (loading) return <div className="fs-page"><Navbar id={id} /><p style={{ textAlign: 'center', marginTop: 60 }}>Loading...</p></div>;
+  if (profileBlockedMessage) {
+    return (
+      <div className="fs-page">
+        <Navbar id={id} />
+        <p style={{ textAlign: 'center', marginTop: 60, color: '#b45309' }}>{profileBlockedMessage}</p>
+      </div>
+    );
+  }
   if (error) return <div className="fs-page"><Navbar id={id} /><p style={{ textAlign: 'center', marginTop: 60, color: '#dc2626' }}>Error loading users.</p></div>;
 
   return (
@@ -406,22 +415,32 @@ const FriendSearch = () => {
         </div>
 
         {/* Incoming requests card */}
-        {pendingRequests.length > 0 && (
+        {friendRequests.incoming.length > 0 && (
           <div className="fs-card">
             <h2 className="fs-card-title" style={{ fontSize: 18 }}>Incoming Requests</h2>
             <div className="fs-results-list">
-              {pendingRequests.map((requester, i) => (
+              {friendRequests.incoming.map((req, i) => (
                 <div key={i} className="fs-user-row">
                   <div className="fs-avatar">
-                    {requester.firstName ? requester.firstName.charAt(0).toUpperCase() : '?'}
+                    {(req.requesterFirstName || '').charAt(0).toUpperCase() || '?'}
                   </div>
                   <div className="fs-user-info">
-                    <div className="fs-user-name">{requester.firstName} {requester.lastName}</div>
-                    <div className="fs-user-meta"><span>{requester.email}</span></div>
+                    <div className="fs-user-name">{req.requesterFirstName} {req.requesterLastName}</div>
+                    <div className="fs-user-meta"><span>{req.requesterEmail}</span></div>
                   </div>
                   <div className="fs-request-actions">
-                    <button className="fs-btn-accept" onClick={() => handleAccept(requester)}>Accept</button>
-                    <button className="fs-btn-decline" onClick={() => handleDecline(requester)}>Decline</button>
+                    <button
+                      className="fs-btn-accept"
+                      onClick={() => handleAccept(req.id, `${req.requesterFirstName} ${req.requesterLastName || ''}`.trim())}
+                    >
+                      Accept
+                    </button>
+                    <button
+                      className="fs-btn-decline"
+                      onClick={() => handleDecline(req.id, `${req.requesterFirstName} ${req.requesterLastName || ''}`.trim())}
+                    >
+                      Decline
+                    </button>
                   </div>
                 </div>
               ))}
@@ -467,18 +486,16 @@ const FriendSearch = () => {
                   )}
 
                   {(() => {
-                    const status = getStatusForUser(user.id);
-                    if (status === 'accepted') {
-                      return <span className="fs-status-badge fs-status-friends">Friends</span>;
-                    }
-                    if (status === 'pending_sent') {
+                    const reqStatus = getRequestStatusForUser(user.id);
+                    if (reqStatus.status === 'pending_sent') {
                       return <span className="fs-status-badge fs-status-pending">Requested</span>;
                     }
-                    if (status === 'pending_received') {
+                    if (reqStatus.status === 'pending_received' && reqStatus.requestId) {
+                      const requesterName = `${user.firstName} ${user.lastName || ''}`.trim();
                       return (
                         <div className="fs-request-actions">
-                          <button className="fs-btn-accept" onClick={(e) => { e.stopPropagation(); handleAccept(user); }}>Accept</button>
-                          <button className="fs-btn-decline" onClick={(e) => { e.stopPropagation(); handleDecline(user); }}>Decline</button>
+                          <button className="fs-btn-accept" onClick={(e) => { e.stopPropagation(); handleAccept(reqStatus.requestId, requesterName); }}>Accept</button>
+                          <button className="fs-btn-decline" onClick={(e) => { e.stopPropagation(); handleDecline(reqStatus.requestId, requesterName); }}>Decline</button>
                         </div>
                       );
                     }

@@ -6,6 +6,7 @@ import {
   declineChallenge,
   createChallenge,
   getChallengeStats,
+  getChallengeFriends,
 } from '../Services/challengeService';
 import Navbar from './NavBar';
 import './ChallengeHub.css';
@@ -44,11 +45,11 @@ function ChallengeHub() {
 
   const loadFriends = async () => {
     try {
-      const { default: axios } = await import('../Utils/axios');
-      const res = await axios.get(`/api/v1/friends/${id}`);
-      setFriends(res.friendsList || res || []);
+      const res = await getChallengeFriends(id);
+      setFriends(Array.isArray(res.friends) ? res.friends : []);
     } catch (err) {
       console.error('Could not load friends:', err);
+      setFriends([]);
     }
   };
 
@@ -82,6 +83,12 @@ function ChallengeHub() {
     } catch (err) {
       console.error('Failed to create challenge:', err);
     }
+  };
+
+  const getFriendOptionLabel = (friend) => {
+    if (friend.label) return friend.label;
+    const name = `${friend.firstName || ''} ${friend.lastName || ''}`.trim();
+    return name || `User #${friend.id}`;
   };
 
   const handlePlayChallenge = (challenge) => {
@@ -159,10 +166,10 @@ function ChallengeHub() {
                 onChange={e => setFriendId(e.target.value)}
                 className="ch-select"
               >
-                <option value="">Select a friend...</option>
-                {friends.map(f => (
-                  <option key={f.id} value={f.id}>
-                    {f.firstName} {f.lastName || ''}
+                <option value="">Select a friend</option>
+                {friends.map((friend) => (
+                  <option key={friend.id} value={friend.id}>
+                    {getFriendOptionLabel(friend)}
                   </option>
                 ))}
               </select>
