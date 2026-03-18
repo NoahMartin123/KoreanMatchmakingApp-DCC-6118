@@ -98,19 +98,27 @@ export async function checkAndAwardBadges(userId) {
 
     const stat = await getUserStat(userId, badge.criteriaType);
     if (stat >= badge.criteriaValue) {
-      await db.UserBadge.create({
-        userId,
-        badgeId: badge.id,
-        earnedAt: new Date(),
-      });
-      newlyEarned.push({
-        id: badge.id,
-        name: badge.name,
-        description: badge.description,
-        icon: badge.icon,
-        tier: badge.tier,
-        category: badge.category,
-      });
+      try {
+        await db.UserBadge.create({
+          userId,
+          badgeId: badge.id,
+          earnedAt: new Date(),
+        });
+        // Avoid duplicate toast entries if this function runs again quickly.
+        earnedBadgeIds.add(badge.id);
+        newlyEarned.push({
+          id: badge.id,
+          name: badge.name,
+          description: badge.description,
+          icon: badge.icon,
+          tier: badge.tier,
+          category: badge.category,
+        });
+      } catch (err) {
+        // Likely a unique constraint race (already earned). Ignore safely.
+        console.warn('checkAndAwardBadges create skipped:', err.message);
+        earnedBadgeIds.add(badge.id);
+      }
     }
   }
 

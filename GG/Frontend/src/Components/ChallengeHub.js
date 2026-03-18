@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useSearchParams, useNavigate, createSearchParams } from 'react-router-dom';
 import {
   getUserChallenges,
   acceptChallenge,
@@ -53,7 +53,28 @@ function ChallengeHub() {
     }
   };
 
-  useEffect(() => { loadData(); }, []);
+  const handleBackToDashboard = () => {
+    navigate({
+      pathname: '/Dashboard',
+      search: createSearchParams({ id }).toString(),
+    });
+  };
+
+  // Poll so both players see status updates without refreshing.
+  useEffect(() => {
+    let mounted = true;
+    const tick = async () => {
+      if (!mounted) return;
+      await loadData();
+    };
+    tick();
+    const t = setInterval(tick, 5000);
+    return () => {
+      mounted = false;
+      clearInterval(t);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
 
   const handleAccept = async (challengeId) => {
     try {
@@ -76,7 +97,7 @@ function ChallengeHub() {
   const handleCreate = async () => {
     if (!friendId) return;
     try {
-      await createChallenge(id, friendId, gameType, difficulty);
+      await createChallenge(Number(id), Number(friendId), gameType, difficulty);
       setShowCreate(false);
       setFriendId('');
       loadData();
@@ -166,12 +187,27 @@ function ChallengeHub() {
                 onChange={e => setFriendId(e.target.value)}
                 className="ch-select"
               >
+<<<<<<< Updated upstream
                 <option value="">Select a friend</option>
                 {friends.map((friend) => (
                   <option key={friend.id} value={friend.id}>
                     {getFriendOptionLabel(friend)}
                   </option>
                 ))}
+=======
+                <option value="">Select a friend...</option>
+                {friends.map((f, idx) => {
+                  const fId = f?.id ?? f?.userId ?? f?.user_id ?? f;
+                  const first = f?.firstName ?? f?.first_name ?? '';
+                  const last = f?.lastName ?? f?.last_name ?? '';
+                  const label = (first || last) ? `${first} ${last}`.trim() : `User #${fId}`;
+                  return (
+                    <option key={fId ?? idx} value={String(fId)}>
+                      {label}
+                    </option>
+                  );
+                })}
+>>>>>>> Stashed changes
               </select>
             </div>
             <div className="ch-form-row">
@@ -264,6 +300,12 @@ function ChallengeHub() {
               );
             })
           )}
+        </div>
+
+        <div className="ch-back-wrap">
+          <button className="ch-back-dashboard" onClick={handleBackToDashboard}>
+            Back to Dashboard
+          </button>
         </div>
       </div>
       </div>

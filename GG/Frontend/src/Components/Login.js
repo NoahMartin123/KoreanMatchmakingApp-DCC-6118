@@ -2,6 +2,7 @@ import { useState } from 'react';
 import React from "react";
 import './Login.scss';
 import { handleLoginApi } from '../Services/userService';
+import logo from "../Styles/logo.png";
 import { createSearchParams, useNavigate } from "react-router-dom";
 import { FiEye, FiEyeOff } from 'react-icons/fi';
  
@@ -34,10 +35,9 @@ function Login() {
         try {
             data = await handleLoginApi(username, password);
             console.log("check >>>>", data.errorCode);
-            if (data && data.errCode != 0) {
-                setErrMsg(data.message);
-            }
-            if (data.errorCode == 0) {
+      if (data && data.errorCode != 0) {
+        setErrMsg(data.message || "Login failed.");
+      } else if (data && data.errorCode == 0) {
                 navigate({
                     pathname: "/Dashboard",
                     search: createSearchParams({ id: data.id }).toString()
@@ -54,6 +54,7 @@ function Login() {
     return (
         <div className="auth-page">
           <div className="auth-card">
+            <img src={logo} alt="Language Exchange Matchmaker logo" className="auth-logo" />
             <h1 className="auth-title">Log In</h1>
             <p className="auth-subtitle">Welcome back. Let’s pick up where you left off.</p>
 

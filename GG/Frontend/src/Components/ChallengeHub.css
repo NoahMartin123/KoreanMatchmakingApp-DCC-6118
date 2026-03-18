@@ -140,3 +140,27 @@
 .ch-turn-indicator { margin: 6px 0 4px; font-size: 13px; }
 .ch-your-turn { color: #6344A6; font-weight: bold; }
 .ch-waiting { color: #888; font-style: italic; }
+
+.ch-back-wrap {
+  display: flex;
+  justify-content: center;
+  margin-top: 16px;
+  width: 100%;
+}
+
+.ch-back-dashboard {
+  background: #fff;
+  color: #6344A6;
+  border: 2px solid #6344A6;
+  border-radius: 8px;
+  padding: 10px 24px;
+  font-size: 14px;
+  font-weight: bold;
+  cursor: pointer;
+  font-family: 'HK Sentiments', sans-serif;
+  transition: background-color 0.2s;
+}
+
+.ch-back-dashboard:hover {
+  background: #f3f0fa;
+}

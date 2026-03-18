@@ -29,6 +29,7 @@ function UserReport() {
   const [selectedUser, setSelectedUser] = useState(null);
   const [userInfo, setUserInfo] = useState(null);
   const [hidden, setHidden] = useState(false);
+  const [reportError, setReportError] = useState('');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -53,8 +54,16 @@ function UserReport() {
   const handleFetchUser = async () => {
     if (!selectedUser) return;
     try {
+      setReportError('');
       const response = await handleGetUserProfileApi(selectedUser.value);
       const userProfile = response.data ?? response;
+
+      if (userProfile?.message && /not found/i.test(userProfile.message)) {
+        setHidden(false);
+        setUserInfo(null);
+        setReportError('That user has not completed their profile yet.');
+        return;
+      }
 
       if (userProfile.visibility === 'Hide') {
         setHidden(true);
@@ -69,6 +78,7 @@ function UserReport() {
       }
     } catch (error) {
       console.error('Error fetching user profile:', error);
+      setReportError('Could not fetch that user profile.');
     }
   };
 
@@ -132,6 +142,12 @@ function UserReport() {
               Back to Dashboard
             </button>
           </div>
+
+          {reportError && (
+            <div style={{ color: '#dc2626', marginTop: 12, textAlign: 'center' }}>
+              {reportError}
+            </div>
+          )}
         </div>
       </div>
     </div>

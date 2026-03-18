@@ -319,6 +319,17 @@
   background-color: #f3f0fa;
 }
 
+.pd-challenge-notice {
+  text-align: center;
+  background: #f3f0fa;
+  border: 1px solid #ede9fe;
+  border-radius: 12px;
+  padding: 10px 14px;
+  margin: 10px 0 16px;
+  font-weight: bold;
+  color: #6344A6;
+}
+
 /* ── Duolingo-style completion ── */
 .pd-mascot {
   display: flex;

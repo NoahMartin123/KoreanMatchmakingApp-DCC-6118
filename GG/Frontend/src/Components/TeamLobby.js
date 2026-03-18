@@ -80,6 +80,13 @@ function TeamLobby() {
   const goCreate = () => {
     navigate({ pathname: '/TeamCreate', search: createSearchParams({ id }).toString() });
   };
+
+  const goToDashboard = () => {
+    navigate({
+      pathname: '/Dashboard',
+      search: createSearchParams({ id }).toString(),
+    });
+  };
  
   if (loading) return <div className="team-loading">Loading...</div>;
  
@@ -179,6 +186,12 @@ function TeamLobby() {
               </button>
             </div>
           )}
+
+          <div className="team-btn-row" style={{ marginTop: 14 }}>
+            <button className="team-btn-secondary" onClick={goToDashboard}>
+              Back to Dashboard
+            </button>
+          </div>
         </div>
       </div>
     </div>

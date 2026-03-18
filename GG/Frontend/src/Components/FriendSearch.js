@@ -58,6 +58,7 @@ const FriendSearch = () => {
   const [search] = useSearchParams();
   const id = search.get('id');
   const navigate = useNavigate();
+  const currentUserEmail = getUserData()?.email;
 
   const [filterInput, setFilterInput] = useState('');
   const [userNames, setUserNames] = useState([]);
@@ -81,9 +82,15 @@ const FriendSearch = () => {
         const userResponse = await handleGetUserNamesApi(id);
         const profilesResponse = await handleGetUserPreferencesApi();
 
+        // Our axios instance interceptor returns response.data directly,
+        // so `handleGetUserNamesApi()` and `handleGetUserPreferencesApi()`
+        // may be arrays already (not `{ data: ... }` objects).
+        const usersArr = userResponse?.data ?? userResponse;
+        const profilesArr = profilesResponse?.data ?? profilesResponse;
+
         const mergedUsers = await Promise.all(
-          userResponse.data.map(async (user) => {
-            const userProfile = profilesResponse.data.find((p) => p.id === user.id);
+          (usersArr || []).map(async (user) => {
+            const userProfile = (profilesArr || []).find((p) => p.id === user.id);
             let userInterests = [];
             try { const r = await handleGetUserInterests(user.id); userInterests = r || []; } catch {}
             let userAvailability = [];
@@ -92,7 +99,14 @@ const FriendSearch = () => {
           })
         );
 
-        const visibleUsers = mergedUsers.filter((u) => u.visibility === 'Show' && Number(u.id) !== Number(id));
+        // If a user's preferences row is missing, `visibility` can be undefined.
+        // In that case, don't hide them from search entirely.
+        const visibleUsers = mergedUsers.filter((u) => {
+          const isSelfById = id && String(u.id) === String(id);
+          const isSelfByEmail = currentUserEmail && u.email === currentUserEmail;
+          const isSelf = Boolean(isSelfById || isSelfByEmail);
+          return (u.visibility ? u.visibility === 'Show' : true) && !isSelf;
+        });
         setUserNames(visibleUsers);
         setAllUserNames(visibleUsers);
         setCurrentUser(getUserData());

@@ -12,7 +12,7 @@ function Home() {
         <img
           src={logo}
           alt="Language Exchange Matchmaker logo"
-          style={{ width: 96, height: 96, objectFit: "contain", margin: "0 auto 12px" }}
+          className="auth-logo"
         />
         <h1 className="auth-title">Language Exchange Matchmaker</h1>
         <p className="auth-subtitle">
@@ -33,10 +33,6 @@ function Home() {
           </button>
         </div>
 
-        <div className="text-subtitle" style={{ marginTop: 8 }}>
-          Match based on goals, schedule, and level – then track your progress with games,
-          quests, and badges.
-        </div>
       </div>
     </div>
   );

@@ -1,8 +1,8 @@
-
 import { useState } from 'react';
 import React from "react";
 import './Login.scss';
-import { handleRegisterApi } from '../Services/userService';
+import { handleLoginApi, handleRegisterApi } from '../Services/userService';
+import logo from "../Styles/logo.png";
 import { createSearchParams, useNavigate } from "react-router-dom";
  
 function Registration() {
@@ -21,7 +21,7 @@ function Registration() {
   const handleEmail     = (e) => { setEmail(e.target.value);     setSubmitted(false); };
   const handlePassword  = (e) => { setPassword(e.target.value);  setSubmitted(false); };
  
-  const handleBack = () => { navigate({ pathname: "/login" }); };
+  const handleBack = () => { navigate({ pathname: "/Login" }); };
  
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -34,19 +34,28 @@ function Registration() {
     setErrMsg("");
     try {
       console.log('Sending Register:', firstName, lastName, email, password);
-      let data = await handleRegisterApi(firstName, lastName, email, password);
-      console.log('Register response:', data);
- 
-      if (data && data.errCode !== 0) {
-        // Fixed: was checking data.errorCode (typo), now matches API response field errCode
+      const registerResp = await handleRegisterApi(firstName, lastName, email, password);
+      console.log('Register response:', registerResp);
+
+      if (registerResp && registerResp.errorCode !== 0) {
         setSubmitted(true);
         setError(true);
-        setErrMsg(data.message);
+        setErrMsg(registerResp.message || 'Registration failed.');
+        return;
       }
-      if (data && data.errCode === 0) {
+
+      // Auto-login after successful registration.
+      const loginResp = await handleLoginApi(email, password);
+      if (loginResp && loginResp.errorCode === 0) {
+        navigate({
+          // Go directly to initial profile creation using the logged-in user's id.
+          pathname: "/CreateProfile",
+          search: createSearchParams({ id: loginResp.id }).toString(),
+        });
+      } else {
         navigate({
           pathname: "/CreateProfile",
-          search: createSearchParams({ id: data.id }).toString()
+          search: createSearchParams({ id: registerResp.id }).toString(),
         });
       }
     } catch (error) {
@@ -65,6 +74,7 @@ function Registration() {
   return (
     <div className="auth-page">
       <div className="auth-card">
+        <img src={logo} alt="Language Exchange Matchmaker logo" className="auth-logo" />
         <h1 className="auth-title">Create Account</h1>
         <p className="auth-subtitle">Sign up to start games, quests, and practice sessions.</p>
 

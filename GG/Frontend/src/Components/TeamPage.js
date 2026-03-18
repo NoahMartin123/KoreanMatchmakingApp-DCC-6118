@@ -122,6 +122,13 @@ function TeamPage() {
       flash(err?.response?.data?.error || 'Failed to disband team.', true);
     }
   };
+
+  const handleBackToDashboard = () => {
+    navigate({
+      pathname: '/Dashboard',
+      search: createSearchParams({ id }).toString(),
+    });
+  };
  
   if (loading) return <div className="team-loading">Loading...</div>;
   if (!team)   return null;
@@ -225,6 +232,9 @@ function TeamPage() {
               {errMsg     && <p className="team-error">{errMsg}</p>}
  
               <div className="team-btn-row">
+                <button className="team-btn-secondary" onClick={handleBackToDashboard}>
+                  Back to Dashboard
+                </button>
                 {myRole === 'owner' && (
                   <>
                     <button className="team-btn-secondary" onClick={() => setEditing(true)}>

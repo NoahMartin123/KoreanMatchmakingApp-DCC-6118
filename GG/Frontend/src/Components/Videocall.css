@@ -9,13 +9,17 @@
 
 .vc-center {
   display: flex;
+  flex: 1;
+  align-items: center;
   justify-content: center;
-  padding: 24px 20px 60px;
+  padding: 30px 20px 60px;
 }
 
 .video-call-container {
   width: 100%;
   max-width: 760px;
+  display: flex;
+  justify-content: center;
 }
 
 /* Card layout for a clean, intuitive join flow */
@@ -23,28 +27,29 @@
   width: 100%;
   max-width: 560px;
   background: #ffffff;
-  border-radius: 16px;
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
-  padding: 24px 24px 20px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  border: 1px solid #ede9fe;
+  padding: 24px;
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 16px;
 }
 
 /* Headings */
 .join-title {
   margin: 0;
   text-align: center;
-  font-size: 22px;
-  font-weight: 800;
-  color: #232323;
+  font-size: 24px;
+  font-weight: 700;
+  color: #364659;
 }
 
 .join-subtitle {
-  margin: -6px 0 0;
+  margin: -8px 0 0 0;
   text-align: center;
-  color: #666;
-  font-size: 14px;
+  color: #888;
+  font-size: 13px;
 }
 
 /* Form */
@@ -55,7 +60,7 @@
 
 .join-label {
   font-weight: 600;
-  color: #333;
+  color: #364659;
 }
 
 .join-error {
@@ -87,22 +92,21 @@
 
 /* Primary action */
 .btn-cta {
-  background: #5b3caf;        /* your app purple */
+  background: #6344A6;
   color: #fff;
 }
 .btn-cta:hover {
-  background: #4d3393;
-  transform: translateY(-1px);
+  background: #4f3480;
 }
 
 /* Secondary action */
 .btn-ghost {
-  background: #e9e9f3;
-  color: #2c2c34;
+  background: #ffffff;
+  color: #6344A6;
+  border: 1px solid #d4d4d8;
 }
 .btn-ghost:hover {
-  background: #dedff2;
-  transform: translateY(-1px);
+  background: #f3f0fa;
 }
 
 /* Responsive stacking */

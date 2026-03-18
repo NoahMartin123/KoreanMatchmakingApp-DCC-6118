@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { startPronunciationDrill, submitPronunciationDrill } from '../Services/gameLogicService';
+import { submitChallengeScore } from '../Services/challengeService';
 import Navbar from './NavBar';
 import './PronunciationDrill.css';
 
@@ -8,6 +9,7 @@ function PronunciationDrill() {
   const [search] = useSearchParams();
   const id = search.get('id');
   const challengeId = search.get('challengeId');
+  const inChallengeMode = !!challengeId;
   const navigate = useNavigate();
 
   const [phrases, setPhrases] = useState([]);
@@ -18,6 +20,7 @@ function PronunciationDrill() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [difficulty, setDifficulty] = useState('Beginner');
+  const [challengeSubmitted, setChallengeSubmitted] = useState(false);
 
   const loadRound = async (diff) => {
     setLoading(true);
@@ -51,6 +54,10 @@ function PronunciationDrill() {
     try {
       const data = await submitPronunciationDrill(id, practiced.size + (practiced.has(currentIdx) ? 0 : 1));
       setResult(data);
+      if (inChallengeMode) {
+        await submitChallengeScore(challengeId, Number(id), data.score);
+        setChallengeSubmitted(true);
+      }
     } catch (err) {
       console.error('Failed to submit:', err);
     } finally {
@@ -170,6 +177,12 @@ function PronunciationDrill() {
               </div>
             )}
 
+            {inChallengeMode && challengeSubmitted && (
+              <div className="pd-challenge-notice">
+                Score submitted! Waiting for your opponent to finish their turn.
+              </div>
+            )}
+
             <div className="pd-all-phrases">
               <h4>Phrases Practiced</h4>
               {phrases.map((p, i) => (
@@ -183,8 +196,11 @@ function PronunciationDrill() {
 
             <div className="pd-actions" style={{ marginTop: '20px' }}>
               <button className="pd-submit-btn" onClick={() => loadRound()}>Practice Again</button>
-              <button className="pd-back-btn" onClick={() => navigate(`/GameSelection?id=${id}`)}>
-                Back to Games
+              <button
+                className="pd-back-btn"
+                onClick={() => navigate(inChallengeMode ? `/Challenges?id=${id}` : `/GameSelection?id=${id}`)}
+              >
+                {inChallengeMode ? 'Back to Challenges' : 'Back to Games'}
               </button>
             </div>
           </div>
