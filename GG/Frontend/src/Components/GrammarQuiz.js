@@ -1,12 +1,16 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { startGrammarQuiz, submitGrammarQuiz } from '../Services/gameLogicService';
+import { submitChallengeScore } from '../Services/challengeService';
 import Navbar from './NavBar';
 import './GrammarQuiz.css';
 
 function GrammarQuiz() {
   const [search] = useSearchParams();
   const id = search.get('id');
+  const challengeId = search.get('challengeId');
+  const urlDifficulty = search.get('difficulty');
+  const inChallengeMode = !!challengeId;
   const navigate = useNavigate();
 
   const [questions, setQuestions] = useState([]);
@@ -15,13 +19,15 @@ function GrammarQuiz() {
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [difficulty, setDifficulty] = useState('Beginner');
+  const [difficulty, setDifficulty] = useState(urlDifficulty || 'Beginner');
+  const [challengeSubmitted, setChallengeSubmitted] = useState(false);
 
   const loadRound = async (diff) => {
     setLoading(true);
     setResult(null);
     setCurrentQ(0);
     setAnswers([]);
+    setChallengeSubmitted(false);
     try {
       const data = await startGrammarQuiz(id, diff || difficulty);
       setQuestions(data.questions || []);
@@ -48,6 +54,10 @@ function GrammarQuiz() {
     try {
       const data = await submitGrammarQuiz(id, answers);
       setResult(data);
+      if (inChallengeMode) {
+        await submitChallengeScore(challengeId, id, data.score);
+        setChallengeSubmitted(true);
+      }
     } catch (err) {
       console.error('Failed to submit:', err);
     } finally {
@@ -71,12 +81,16 @@ function GrammarQuiz() {
       <div className="gq-page-content">
       <div className="gq-container">
         <div className="gq-header">
-          <h2 className="gq-title">Grammar Quiz</h2>
-          <select value={difficulty} onChange={handleDifficultyChange} className="gq-difficulty">
-            <option value="Beginner">Beginner</option>
-            <option value="Intermediate">Intermediate</option>
-            <option value="Advanced">Advanced</option>
-          </select>
+          <h2 className="gq-title">Grammar Quiz{inChallengeMode ? ' — Challenge' : ''}</h2>
+          {inChallengeMode ? (
+            <span className="gq-difficulty-locked">{difficulty}</span>
+          ) : (
+            <select value={difficulty} onChange={handleDifficultyChange} className="gq-difficulty">
+              <option value="Beginner">Beginner</option>
+              <option value="Intermediate">Intermediate</option>
+              <option value="Advanced">Advanced</option>
+            </select>
+          )}
         </div>
 
         {!result && q && (
@@ -151,6 +165,12 @@ function GrammarQuiz() {
               <div className="gq-xp-track"><div className="gq-xp-fill" style={{ width: `${Math.min(100, (result.xpEarned / 50) * 100)}%` }} /></div>
             </div>
 
+            {inChallengeMode && challengeSubmitted && (
+              <div className="gq-challenge-notice">
+                Score submitted! Waiting for your opponent to finish their turn.
+              </div>
+            )}
+
             {result.newBadges && result.newBadges.length > 0 && (
               <div className="gq-new-badges">
                 <h4>New Badges Earned!</h4>
@@ -181,10 +201,18 @@ function GrammarQuiz() {
             )}
 
             <div className="gq-actions">
-              <button className="gq-submit-btn" onClick={() => loadRound()}>Play Again</button>
-              <button className="gq-back-btn" onClick={() => navigate(`/GameSelection?id=${id}`)}>
-                Back to Games
-              </button>
+              {inChallengeMode ? (
+                <button className="gq-back-btn" onClick={() => navigate(`/Challenges?id=${id}`)}>
+                  Back to Challenges
+                </button>
+              ) : (
+                <>
+                  <button className="gq-submit-btn" onClick={() => loadRound()}>Play Again</button>
+                  <button className="gq-back-btn" onClick={() => navigate(`/GameSelection?id=${id}`)}>
+                    Back to Games
+                  </button>
+                </>
+              )}
             </div>
           </div>
         )}

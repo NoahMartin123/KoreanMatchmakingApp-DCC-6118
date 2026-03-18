@@ -378,11 +378,11 @@ let addTrueFriend = async (req, res) => {
       const a = Math.min(userId1, userId2);
       const b = Math.max(userId1, userId2);
 
-      // Insert (handle duplicates)
-      const sql = 'INSERT INTO FriendsModel (user1_id, user2_id) VALUES (?, ?)';
-      await pool.execute(sql, [a, b]);
+      // Insert as pending request (handle duplicates)
+      const sql = 'INSERT INTO FriendsModel (user1_id, user2_id, status, requester_id) VALUES (?, ?, ?, ?)';
+      await pool.execute(sql, [a, b, 'pending', userId1]);
 
-      return res.status(201).json({ message: 'Friend added', user_one_id: a, user_two_id: b });
+      return res.status(201).json({ message: 'Friend request sent', user_one_id: a, user_two_id: b });
   } catch (err) {
     if (err.code === 'ER_DUP_ENTRY') {
       return res.status(409).json({ error: 'Friendship already exists' });
@@ -424,12 +424,12 @@ let getTrueFriendsList = async (req, res) => {
       SELECT u.id, u.firstName, u.lastName, u.email
       FROM FriendsModel f
       JOIN UserAccount u ON u.id = f.user2_ID
-      WHERE f.user1_ID = ?
+      WHERE f.user1_ID = ? AND f.status = 'accepted'
       UNION
       SELECT u.id, u.firstName, u.lastName, u.email
       FROM FriendsModel f
       JOIN UserAccount u ON u.id = f.user1_ID
-      WHERE f.user2_ID = ?
+      WHERE f.user2_ID = ? AND f.status = 'accepted'
       `,
       [userId, userId]
     );
@@ -544,9 +544,75 @@ let deleteMeeting = async (req, res) => {
   }
 };
 
-const APIController = { 
-    addFriend, getAllUsers, createNewUser, updateUser, deleteUser, getUserNames, getUserPreferences, getUserProfile, updateRating, 
-    addComment, getUserProficiencyAndRating, addToFriendsList, getFriendsList,  removeFriend, addTrueFriend, removeTrueFriend, 
-    getTrueFriendsList, getUserAvailability, createMeeting, deleteMeeting
+let acceptFriendRequest = async (req, res) => {
+  try {
+    const { userId1, userId2 } = req.body;
+    const a = Math.min(Number(userId1), Number(userId2));
+    const b = Math.max(Number(userId1), Number(userId2));
+    const [result] = await pool.execute(
+      "UPDATE FriendsModel SET status = 'accepted' WHERE user1_id = ? AND user2_id = ?",
+      [a, b]
+    );
+    if (result.affectedRows === 0) return res.status(404).json({ error: 'Request not found' });
+    return res.status(200).json({ message: 'Friend request accepted' });
+  } catch (err) {
+    console.error('acceptFriendRequest error:', err);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+let rejectFriendRequest = async (req, res) => {
+  try {
+    const { userId1, userId2 } = req.body;
+    const a = Math.min(Number(userId1), Number(userId2));
+    const b = Math.max(Number(userId1), Number(userId2));
+    await pool.execute('DELETE FROM FriendsModel WHERE user1_id = ? AND user2_id = ?', [a, b]);
+    return res.status(200).json({ message: 'Friend request rejected' });
+  } catch (err) {
+    console.error('rejectFriendRequest error:', err);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+let getMyFriendStatuses = async (req, res) => {
+  try {
+    const userId = Number(req.params.userId);
+    if (!userId) return res.status(400).json({ error: 'userId is required' });
+    const [rows] = await pool.query(
+      'SELECT user1_id, user2_id, status, requester_id FROM FriendsModel WHERE user1_id = ? OR user2_id = ?',
+      [userId, userId]
+    );
+    return res.status(200).json({ statuses: rows.map(r => ({ ...r })) });
+  } catch (err) {
+    console.error('getMyFriendStatuses error:', err);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+let getPendingRequests = async (req, res) => {
+  try {
+    const userId = Number(req.params.userId);
+    if (!userId) return res.status(400).json({ error: 'userId is required' });
+    const [rows] = await pool.query(
+      `SELECT u.id, u.firstName, u.lastName, u.email
+       FROM FriendsModel f
+       JOIN UserAccount u ON u.id = f.requester_id
+       WHERE (f.user1_id = ? OR f.user2_id = ?)
+         AND f.status = 'pending'
+         AND f.requester_id != ?`,
+      [userId, userId, userId]
+    );
+    return res.status(200).json({ requests: rows.map(r => ({ ...r })) });
+  } catch (err) {
+    console.error('getPendingRequests error:', err);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+const APIController = {
+    addFriend, getAllUsers, createNewUser, updateUser, deleteUser, getUserNames, getUserPreferences, getUserProfile, updateRating,
+    addComment, getUserProficiencyAndRating, addToFriendsList, getFriendsList, removeFriend, addTrueFriend, removeTrueFriend,
+    getTrueFriendsList, getUserAvailability, createMeeting, deleteMeeting,
+    acceptFriendRequest, rejectFriendRequest, getMyFriendStatuses, getPendingRequests
 };
 export default APIController;

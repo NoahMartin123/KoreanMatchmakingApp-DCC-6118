@@ -118,6 +118,7 @@
 
 .ch-score-row { font-size: 13px; color: #555; margin-bottom: 8px; display: flex; justify-content: space-between; }
 .ch-winner { color: #16a34a; font-weight: bold; }
+.ch-loser { color: #dc2626; font-weight: bold; }
 .ch-draw { color: #f59e0b; font-weight: bold; }
 
 .ch-card-actions { display: flex; gap: 8px; }
@@ -135,3 +136,7 @@
   padding: 10px 24px; font-size: 14px; font-weight: bold; cursor: pointer;
   font-family: 'HK Sentiments', sans-serif;
 }
+
+.ch-turn-indicator { margin: 6px 0 4px; font-size: 13px; }
+.ch-your-turn { color: #6344A6; font-weight: bold; }
+.ch-waiting { color: #888; font-style: italic; }

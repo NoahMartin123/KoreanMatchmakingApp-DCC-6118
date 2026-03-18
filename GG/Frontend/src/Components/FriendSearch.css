@@ -370,3 +370,39 @@
     font-size: 11px;
   }
 }
+
+.fs-status-badge {
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.fs-status-friends  { background: #d1fae5; color: #065f46; }
+.fs-status-pending  { background: #fef3c7; color: #92400e; }
+
+.fs-request-actions { display: flex; gap: 6px; }
+
+.fs-btn-accept {
+  padding: 4px 12px;
+  border-radius: 6px;
+  border: none;
+  background: #6344A6;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.fs-btn-accept:hover { background: #4f3480; }
+
+.fs-btn-decline {
+  padding: 4px 12px;
+  border-radius: 6px;
+  border: 1px solid #d4d4d8;
+  background: #fff;
+  color: #52525b;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.fs-btn-decline:hover { background: #f4f4f5; }

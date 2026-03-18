@@ -103,6 +103,7 @@ function ImageUpload({
         {/* Buttons */}
         <div className="image-upload-actions">
           <button
+            type="button"
             className="image-upload-btn-choose"
             onClick={() => fileInputRef.current.click()}
             disabled={loading}
@@ -111,6 +112,7 @@ function ImageUpload({
           </button>
           {preview && onRemove && (
             <button
+              type="button"
               className="image-upload-btn-remove"
               onClick={handleRemove}
               disabled={loading}

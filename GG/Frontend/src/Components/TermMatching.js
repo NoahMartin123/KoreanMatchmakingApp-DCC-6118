@@ -1,12 +1,16 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { startTermMatching, submitTermMatching } from '../Services/gameLogicService';
+import { submitChallengeScore } from '../Services/challengeService';
 import Navbar from './NavBar';
 import './TermMatching.css';
 
 function TermMatching() {
   const [search] = useSearchParams();
   const id = search.get('id');
+  const challengeId = search.get('challengeId');
+  const urlDifficulty = search.get('difficulty');
+  const inChallengeMode = !!challengeId;
   const navigate = useNavigate();
 
   const [pairs, setPairs] = useState([]);
@@ -15,14 +19,16 @@ function TermMatching() {
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [difficulty, setDifficulty] = useState('Beginner');
+  const [difficulty, setDifficulty] = useState(urlDifficulty || 'Beginner');
   const [activePairId, setActivePairId] = useState(null);
+  const [challengeSubmitted, setChallengeSubmitted] = useState(false);
 
   const loadRound = async (diff) => {
     setLoading(true);
     setResult(null);
     setSelected({});
     setActivePairId(null);
+    setChallengeSubmitted(false);
     try {
       const data = await startTermMatching(id, diff || difficulty);
       setPairs(data.pairs || []);
@@ -54,6 +60,10 @@ function TermMatching() {
     try {
       const data = await submitTermMatching(id, answers);
       setResult(data);
+      if (inChallengeMode) {
+        await submitChallengeScore(challengeId, id, data.score);
+        setChallengeSubmitted(true);
+      }
     } catch (err) {
       console.error('Failed to submit:', err);
     } finally {
@@ -76,13 +86,17 @@ function TermMatching() {
       <div className="tm-page-content">
       <div className="tm-container">
         <div className="tm-header">
-          <h2 className="tm-title">Term Matching</h2>
+          <h2 className="tm-title">Term Matching{inChallengeMode ? ' — Challenge' : ''}</h2>
           <div className="tm-controls">
-            <select value={difficulty} onChange={handleDifficultyChange} className="tm-difficulty">
-              <option value="Beginner">Beginner</option>
-              <option value="Intermediate">Intermediate</option>
-              <option value="Advanced">Advanced</option>
-            </select>
+            {inChallengeMode ? (
+              <span className="tm-difficulty-locked">{difficulty}</span>
+            ) : (
+              <select value={difficulty} onChange={handleDifficultyChange} className="tm-difficulty">
+                <option value="Beginner">Beginner</option>
+                <option value="Intermediate">Intermediate</option>
+                <option value="Advanced">Advanced</option>
+              </select>
+            )}
           </div>
         </div>
 
@@ -163,6 +177,12 @@ function TermMatching() {
               <div className="tm-xp-track"><div className="tm-xp-fill" style={{ width: `${Math.min(100, (result.xpEarned / 50) * 100)}%` }} /></div>
             </div>
 
+            {inChallengeMode && challengeSubmitted && (
+              <div className="tm-challenge-notice">
+                Score submitted! Waiting for your opponent to finish their turn.
+              </div>
+            )}
+
             {result.newBadges && result.newBadges.length > 0 && (
               <div className="tm-new-badges">
                 <h4>New Badges Earned!</h4>
@@ -184,10 +204,18 @@ function TermMatching() {
             </div>
 
             <div className="tm-actions">
-              <button className="tm-submit-btn" onClick={() => loadRound()}>Play Again</button>
-              <button className="tm-reset-btn" onClick={() => navigate(`/GameSelection?id=${id}`)}>
-                Back to Games
-              </button>
+              {inChallengeMode ? (
+                <button className="tm-reset-btn" onClick={() => navigate(`/Challenges?id=${id}`)}>
+                  Back to Challenges
+                </button>
+              ) : (
+                <>
+                  <button className="tm-submit-btn" onClick={() => loadRound()}>Play Again</button>
+                  <button className="tm-reset-btn" onClick={() => navigate(`/GameSelection?id=${id}`)}>
+                    Back to Games
+                  </button>
+                </>
+              )}
             </div>
           </div>
         )}

@@ -139,6 +139,18 @@ export const handleRemoveTrueFriend = async (userId1, userId2) => {
   return data; // { message: 'Friend removed successfully' } or 404/500
 };
 
+export const handleAcceptFriendRequest = (userId1, userId2) =>
+  axios.post('/api/v1/acceptFriendRequest', { userId1, userId2 });
+
+export const handleRejectFriendRequest = (userId1, userId2) =>
+  axios.post('/api/v1/rejectFriendRequest', { userId1, userId2 });
+
+export const handleGetMyFriendStatuses = (userId) =>
+  axios.get(`/api/v1/friendStatuses/${userId}`);
+
+export const handleGetPendingRequests = (userId) =>
+  axios.get(`/api/v1/pendingRequests/${userId}`);
+
 export const handleGetTrueFriendsList = async (userId) => {
   const url = `http://localhost:8080/api/v1/friends/${userId}`;
   const r = await fetch(url, { credentials: 'include' }); 
