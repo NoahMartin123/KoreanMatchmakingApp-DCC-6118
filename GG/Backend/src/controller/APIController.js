@@ -779,81 +779,9 @@ let deleteMeeting = async (req, res) => {
     });
   }
 };
-<<<<<<< Updated upstream
-const APIController = { 
-    addFriend, getAllUsers, createNewUser, updateUser, deleteUser, getUserNames, getUserPreferences, getUserProfile, updateRating, 
-    addComment, getUserProficiencyAndRating, addToFriendsList, getFriendsList,  removeFriend, addTrueFriend, removeTrueFriend, 
-=======
-
-let acceptFriendRequest = async (req, res) => {
-  try {
-    const { userId1, userId2 } = req.body;
-    const a = Math.min(Number(userId1), Number(userId2));
-    const b = Math.max(Number(userId1), Number(userId2));
-    const [result] = await pool.execute(
-      "UPDATE FriendsModel SET status = 'accepted' WHERE user1_ID = ? AND user2_ID = ?",
-      [a, b]
-    );
-    if (result.affectedRows === 0) return res.status(404).json({ error: 'Request not found' });
-    return res.status(200).json({ message: 'Friend request accepted' });
-  } catch (err) {
-    console.error('acceptFriendRequest error:', err);
-    return res.status(500).json({ error: 'Internal server error' });
-  }
-};
-
-let rejectFriendRequest = async (req, res) => {
-  try {
-    const { userId1, userId2 } = req.body;
-    const a = Math.min(Number(userId1), Number(userId2));
-    const b = Math.max(Number(userId1), Number(userId2));
-    await pool.execute('DELETE FROM FriendsModel WHERE user1_ID = ? AND user2_ID = ?', [a, b]);
-    return res.status(200).json({ message: 'Friend request rejected' });
-  } catch (err) {
-    console.error('rejectFriendRequest error:', err);
-    return res.status(500).json({ error: 'Internal server error' });
-  }
-};
-
-let getMyFriendStatuses = async (req, res) => {
-  try {
-    const userId = Number(req.params.userId);
-    if (!userId) return res.status(400).json({ error: 'userId is required' });
-    const [rows] = await pool.query(
-      'SELECT user1_ID, user2_ID, status, requester_id FROM FriendsModel WHERE user1_ID = ? OR user2_ID = ?',
-      [userId, userId]
-    );
-    return res.status(200).json({ statuses: rows.map(r => ({ ...r })) });
-  } catch (err) {
-    console.error('getMyFriendStatuses error:', err);
-    return res.status(500).json({ error: 'Internal server error' });
-  }
-};
-
-let getPendingRequests = async (req, res) => {
-  try {
-    const userId = Number(req.params.userId);
-    if (!userId) return res.status(400).json({ error: 'userId is required' });
-    const [rows] = await pool.query(
-      `SELECT u.id, u.firstName, u.lastName, u.email
-       FROM FriendsModel f
-       JOIN UserAccount u ON u.id = f.requester_id
-       WHERE (f.user1_ID = ? OR f.user2_ID = ?)
-         AND f.status = 'pending'
-         AND f.requester_id != ?`,
-      [userId, userId, userId]
-    );
-    return res.status(200).json({ requests: rows.map(r => ({ ...r })) });
-  } catch (err) {
-    console.error('getPendingRequests error:', err);
-    return res.status(500).json({ error: 'Internal server error' });
-  }
-};
-
 const APIController = {
     addFriend, getAllUsers, createNewUser, updateUser, deleteUser, getUserNames, getUserPreferences, getUserProfile, updateRating,
     addComment, getUserProficiencyAndRating, addToFriendsList, getFriendsList, removeFriend, addTrueFriend, removeTrueFriend,
->>>>>>> Stashed changes
     getTrueFriendsList, getUserAvailability, createMeeting, deleteMeeting,
     getFriendRequests, acceptFriendRequest, rejectFriendRequest
 };

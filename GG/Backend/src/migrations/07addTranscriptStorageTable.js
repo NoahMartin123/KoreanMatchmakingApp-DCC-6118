@@ -1,84 +1,99 @@
 export async function up(queryInterface, Sequelize) {
+  const tablesRaw = await queryInterface.showAllTables();
+  const tables = (tablesRaw || []).map((t) => (typeof t === 'string' ? t : t?.tableName || '')).filter(Boolean);
+  const hasTable = (name) => tables.some((t) => String(t).toLowerCase() === String(name).toLowerCase());
+
   // Create Transcripts table
-  await queryInterface.createTable('Transcripts', {
-    id: {
-      allowNull: false,
-      autoIncrement: true,
-      primaryKey: true,
-      type: Sequelize.INTEGER
-    },
-    sessionId: {
-      type: Sequelize.STRING,
-      allowNull: false,
-      unique: true
-    },
-    transcript: {
-      type: Sequelize.TEXT('long'), // Supports large strings
-      allowNull: false
-    },
-    createdAt: {
-      allowNull: false,
-      type: Sequelize.DATE
-    },
-    updatedAt: {
-      allowNull: false,
-      type: Sequelize.DATE
-    },
-    aiAccess: {
-      type: Sequelize.BOOLEAN,
-      allowNull: false,
-      defaultValue: false
-    }
-  });
+  if (!hasTable('Transcripts')) {
+    await queryInterface.createTable('Transcripts', {
+      id: {
+        allowNull: false,
+        autoIncrement: true,
+        primaryKey: true,
+        type: Sequelize.INTEGER
+      },
+      sessionId: {
+        type: Sequelize.STRING,
+        allowNull: false,
+        unique: true
+      },
+      transcript: {
+        type: Sequelize.TEXT('long'), // Supports large strings
+        allowNull: false
+      },
+      createdAt: {
+        allowNull: false,
+        type: Sequelize.DATE
+      },
+      updatedAt: {
+        allowNull: false,
+        type: Sequelize.DATE
+      },
+      aiAccess: {
+        type: Sequelize.BOOLEAN,
+        allowNull: false,
+        defaultValue: false
+      }
+    });
+  }
 
   // Create junction table for many-to-many relationship
-  await queryInterface.createTable('TranscriptUsers', {
-    id: {
-      allowNull: false,
-      autoIncrement: true,
-      primaryKey: true,
-      type: Sequelize.INTEGER
-    },
-    transcriptId: {
-      type: Sequelize.INTEGER,
-      allowNull: false,
-      references: {
-        model: 'Transcripts',
-        key: 'id'
+  if (!hasTable('TranscriptUsers')) {
+    await queryInterface.createTable('TranscriptUsers', {
+      id: {
+        allowNull: false,
+        autoIncrement: true,
+        primaryKey: true,
+        type: Sequelize.INTEGER
       },
-      onUpdate: 'CASCADE',
-      onDelete: 'CASCADE'
-    },
-    userAccountId: {
-      type: Sequelize.INTEGER,
-      allowNull: false,
-      references: {
-        model: 'UserAccount', // Reference to your existing UserAccount table
-        key: 'id'
+      transcriptId: {
+        type: Sequelize.INTEGER,
+        allowNull: false,
+        references: {
+          model: 'Transcripts',
+          key: 'id'
+        },
+        onUpdate: 'CASCADE',
+        onDelete: 'CASCADE'
       },
-      onUpdate: 'CASCADE',
-      onDelete: 'CASCADE'
-    },
-    createdAt: {
-      allowNull: false,
-      type: Sequelize.DATE
-    },
-    updatedAt: {
-      allowNull: false,
-      type: Sequelize.DATE
-    }
-  });
+      userAccountId: {
+        type: Sequelize.INTEGER,
+        allowNull: false,
+        references: {
+          model: 'UserAccount', // Reference to your existing UserAccount table
+          key: 'id'
+        },
+        onUpdate: 'CASCADE',
+        onDelete: 'CASCADE'
+      },
+      createdAt: {
+        allowNull: false,
+        type: Sequelize.DATE
+      },
+      updatedAt: {
+        allowNull: false,
+        type: Sequelize.DATE
+      }
+    });
+  }
 
   // Add composite unique constraint to prevent duplicate user-transcript pairs
-  await queryInterface.addConstraint('TranscriptUsers', {
-    fields: ['transcriptId', 'userAccountId'],
-    type: 'unique',
-    name: 'unique_transcript_user'
-  });
+  try {
+    await queryInterface.addConstraint('TranscriptUsers', {
+      fields: ['transcriptId', 'userAccountId'],
+      type: 'unique',
+      name: 'unique_transcript_user'
+    });
+  } catch (err) {
+    // Ignore if already exists
+    if (err?.original?.code !== 'ER_DUP_KEYNAME' && err?.parent?.code !== 'ER_DUP_KEYNAME') {
+      throw err;
+    }
+  }
 
   // Add indexes for faster queries
-  await queryInterface.addIndex('TranscriptUsers', ['transcriptId']);
-  await queryInterface.addIndex('TranscriptUsers', ['userAccountId']);
+  try { await queryInterface.addIndex('TranscriptUsers', ['transcriptId']); } catch {}
+  try { await queryInterface.addIndex('TranscriptUsers', ['userAccountId']); } catch {}
 }
 
 export async function down(queryInterface, Sequelize) {

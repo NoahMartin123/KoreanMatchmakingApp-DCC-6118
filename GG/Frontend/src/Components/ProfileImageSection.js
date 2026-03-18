@@ -34,7 +34,7 @@ function ProfileImageSection({ id, currentImage, onImageChange }) {
       currentImage={imageUrl}
       onUpload={handleUpload}
       onRemove={handleRemove}
-      placeholder="👤"
+      placeholder="?"
       shape="circle"
       size={90}
       label="Profile Picture"

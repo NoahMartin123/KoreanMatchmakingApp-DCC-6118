@@ -187,27 +187,12 @@ function ChallengeHub() {
                 onChange={e => setFriendId(e.target.value)}
                 className="ch-select"
               >
-<<<<<<< Updated upstream
                 <option value="">Select a friend</option>
                 {friends.map((friend) => (
                   <option key={friend.id} value={friend.id}>
                     {getFriendOptionLabel(friend)}
                   </option>
                 ))}
-=======
-                <option value="">Select a friend...</option>
-                {friends.map((f, idx) => {
-                  const fId = f?.id ?? f?.userId ?? f?.user_id ?? f;
-                  const first = f?.firstName ?? f?.first_name ?? '';
-                  const last = f?.lastName ?? f?.last_name ?? '';
-                  const label = (first || last) ? `${first} ${last}`.trim() : `User #${fId}`;
-                  return (
-                    <option key={fId ?? idx} value={String(fId)}>
-                      {label}
-                    </option>
-                  );
-                })}
->>>>>>> Stashed changes
               </select>
             </div>
             <div className="ch-form-row">

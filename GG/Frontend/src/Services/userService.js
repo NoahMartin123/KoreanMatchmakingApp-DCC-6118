@@ -144,24 +144,16 @@ export const handleRejectFriendRequest = async (requestId, userId) => {
   return axios.put(`/api/v1/friendRequests/${requestId}/reject`, { userId });
 };
 
+// Aliases for newer UI components (requestId-based flow).
+export const handleAcceptFriendRequestByRequestId = handleAcceptFriendRequest;
+export const handleRejectFriendRequestByRequestId = handleRejectFriendRequest;
+
 export const handleRemoveTrueFriend = async (userId1, userId2) => {
   const { data } = await axios.delete('/api/v1/removeTrueFriend', {
     data: { userId1, userId2 }
   });
   return data; // { message: 'Friend removed successfully' } or 404/500
 };
-
-export const handleAcceptFriendRequest = (userId1, userId2) =>
-  axios.post('/api/v1/acceptFriendRequest', { userId1, userId2 });
-
-export const handleRejectFriendRequest = (userId1, userId2) =>
-  axios.post('/api/v1/rejectFriendRequest', { userId1, userId2 });
-
-export const handleGetMyFriendStatuses = (userId) =>
-  axios.get(`/api/v1/friendStatuses/${userId}`);
-
-export const handleGetPendingRequests = (userId) =>
-  axios.get(`/api/v1/pendingRequests/${userId}`);
 
 export const handleGetTrueFriendsList = async (userId) => {
   const url = `http://localhost:8080/api/v1/friends/${userId}`;

@@ -1,24 +1,34 @@
 /** @type {import('sequelize-cli').Migration} */
 export default {
   async up(queryInterface, Sequelize) {
-    // Add the new zodiac column
-    await queryInterface.addColumn('UserProfile', 'zodiac', {
-      type: Sequelize.STRING,
-      allowNull: true
-    });
+    const table = await queryInterface.describeTable('UserProfile');
 
-    // Remove the old hobby column
-    await queryInterface.removeColumn('UserProfile', 'hobby');
+    // Add the new zodiac column (if missing)
+    if (!table.zodiac) {
+      await queryInterface.addColumn('UserProfile', 'zodiac', {
+        type: Sequelize.STRING,
+        allowNull: true,
+      });
+    }
+
+    // Remove the old hobby column (if present)
+    if (table.hobby) {
+      await queryInterface.removeColumn('UserProfile', 'hobby');
+    }
   },
 
   async down(queryInterface, Sequelize) {
-    // Remove the new zodiac column
-    await queryInterface.removeColumn('UserProfile', 'zodiac');
+    const table = await queryInterface.describeTable('UserProfile');
 
-    // Add back the old hobby column
-    await queryInterface.addColumn('UserProfile', 'hobby', {
-      type: Sequelize.STRING,
-      allowNull: true
-    });
+    if (table.zodiac) {
+      await queryInterface.removeColumn('UserProfile', 'zodiac');
+    }
+
+    if (!table.hobby) {
+      await queryInterface.addColumn('UserProfile', 'hobby', {
+        type: Sequelize.STRING,
+        allowNull: true,
+      });
+    }
   }
 };

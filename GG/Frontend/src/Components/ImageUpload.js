@@ -95,7 +95,7 @@ function ImageUpload({
           {loading && <div className="image-upload-spinner" />}
           {!loading && (
             <div className="image-upload-overlay">
-              <span>📷</span>
+              {/* Avoid emoji; keep UI clean */}
             </div>
           )}
         </div>

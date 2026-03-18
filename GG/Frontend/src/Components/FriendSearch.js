@@ -179,6 +179,7 @@ const FriendSearch = () => {
     try {
       await handleAddTrueFriend(Number(id), Number(user.id));
       flash(`Friend request sent to ${user.firstName} ${user.lastName}`);
+      await refreshRequests();
     } catch (err) {
       const msg = err?.response?.data?.error || err.message || 'Could not send request';
       flash(`Could not add friend: ${msg}`);
