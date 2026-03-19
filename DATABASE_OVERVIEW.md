@@ -14,28 +14,46 @@
 
 ---
 
+## Website Feature → Database Table
+
+| Website Feature | Database Table |
+|-----------------|----------------|
+| **Login / Register** | useraccount |
+| **Profile (Edit Profile, Set Profile)** | useraccount, UserProfile |
+| **Find Friends** | UserProfile, UserAvailability, UserInterest, Interest |
+| **Friends List** | FriendsModel, FriendRequest |
+| **Challenges (1v1)** | **Challenge** |
+| **Games (Term Matching, Grammar Quiz, Pronunciation)** | GameSession |
+| **Badges / Achievements** | Badge, UserBadge |
+| **Quests** | Quest, UserQuestProgress, TeamQuestProgress |
+| **Teams** | Team, TeamMember, TeamInvite |
+| **Scheduler / Meetings** | MeetingModel, UserAvailability |
+| **AI Chat Assistant** | AIChats |
+| **Chat with friends** | ChatModel, MessageModel |
+| **Video call transcripts** | Transcripts |
+| **Post-video ratings** | UserRatings |
+| **Pronunciation feedback** | PronunciationRatings |
+
+---
+
 ## Database Tables Summary
 
-| Table | Rows | Description |
-|-------|------|-------------|
-| useraccount | 6 | User accounts (email, password, name, XP, level) |
-| UserProfile | 5 | User profiles (language, age, MBTI, zodiac, etc.) |
-| FriendsModel | 4 | Friend connections between users |
-| FriendRequest | 5 | Pending/accepted friend requests |
-| UserAvailability | 4 | User availability schedules |
-| UserBadge | 16 | Badges earned by users |
-| Badge | 23 | Badge definitions (games, achievements) |
-| GameSession | 9 | Game play history (term-matching, grammar, pronunciation) |
-| AIChats | 1 | Saved AI chat conversations |
-| ChatModel | 0 | Chat rooms between users |
-| MessageModel | 0 | Chat messages |
-| MeetingModel | 0 | Scheduled meetings |
-| UserRatings | 0 | User ratings after practice sessions |
-| PronunciationRatings | 0 | Pronunciation feedback ratings |
-| Transcripts | 0 | Video call transcripts |
-| Interest | 0 | Interest categories |
-| UserInterest | 0 | User-interest associations |
-| Challenge | 0 | Game challenges between users |
+| Table | Description |
+|-------|-------------|
+| **Challenge** | 1v1 game challenges (challengerId, challengedId, gameType, status, scores) |
+| useraccount | User accounts (email, password, name, XP, level, profileImage) |
+| UserProfile | User profiles (language, age, MBTI, zodiac, interests) |
+| FriendsModel | Friend connections between users |
+| FriendRequest | Pending/accepted friend requests |
+| GameSession | Game play history (term-matching, grammar, pronunciation) |
+| Badge, UserBadge | Badge definitions + badges earned by users |
+| Quest, UserQuestProgress, TeamQuestProgress | Quests and progress |
+| Team, TeamMember, TeamInvite | Teams |
+| UserAvailability, MeetingModel | Availability + scheduled meetings |
+| UserInterest, Interest | User interests |
+| AIChats | Saved AI chat conversations |
+| ChatModel, MessageModel | Chat rooms and messages |
+| UserRatings, PronunciationRatings, Transcripts | Ratings, pronunciation feedback, transcripts |
 
 ---
 
@@ -83,6 +101,13 @@
 
 ## Key Table Schemas
 
+### Challenge (1v1 challenges)
+- challengerId, challengedId (user IDs)
+- gameType (term-matching, grammar-quiz, pronunciation-drill)
+- difficulty (Beginner, Intermediate, Advanced)
+- status (pending, accepted, completed, declined)
+- challengerScore, challengedScore, winnerId, completedAt
+
 ### useraccount
 - id, email, password, firstName, lastName
 - createdAt, updatedAt, loggedIn
@@ -101,6 +126,13 @@
 ---
 
 ## Viewing the Database
+
+**Quick reference:**
+- **View all data as tables in terminal:** `bash scripts/view-database.sh`
+- **MySQL CLI:** `mysql -u root` → `USE languageexchangematchmaker;` → `SHOW TABLES;` → `SELECT * FROM useraccount;` (etc.)
+- **GUI (MySQL Workbench / VS Code):** Host: localhost, Port: 3306, User: root, Password: (empty), Database: languageexchangematchmaker
+
+---
 
 ### Option 1: MySQL command line
 ```bash

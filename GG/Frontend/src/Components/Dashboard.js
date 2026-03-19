@@ -9,6 +9,7 @@ import Navbar from './NavBar';
 const CARDS = [
   { label: 'Edit Profile',    path: '/UpdateProfile' },
   { label: 'Friends List',    path: '/FriendsList' },
+  { label: 'Find Friends',    path: '/FriendSearch' },
   { label: 'Call',            path: '/Videocall' },
   { label: 'Translator',      path: '/Translator' },
   { label: 'User Report',     path: '/UserReport' },

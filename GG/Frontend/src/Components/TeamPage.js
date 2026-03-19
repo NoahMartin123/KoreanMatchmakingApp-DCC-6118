@@ -297,7 +297,7 @@ function TeamPage() {
                 <span className="team-invite-label">Invite Code:</span>
                 <span className="team-invite-code">{team.inviteCode}</span>
                 <button className="team-copy-btn" onClick={handleCopyCode}>
-                  {codeCopied ? '✓ Copied' : '📋 Copy'}
+                  {codeCopied ? 'Copied' : 'Copy'}
                 </button>
               </div>
 
@@ -317,7 +317,7 @@ function TeamPage() {
                         onClick={() => handleShareWithFriend(f)}
                       >
                         {shareSentTo === f.id
-                          ? `✓ Invite sent to ${f.firstName}!`
+                          ? `Invite sent to ${f.firstName}!`
                           : `Invite ${f.firstName} ${f.lastName || ''}`.trim()}
                       </button>
                     ))}
@@ -333,7 +333,7 @@ function TeamPage() {
                 {myRole === 'owner' && (
                   <>
                     <button className="team-btn-secondary" onClick={() => setEditing(true)}>
-                      ✏️ Edit Team
+                      Edit Team
                     </button>
                     <button className="team-btn-danger" onClick={handleDisband}>
                       Disband
@@ -357,13 +357,13 @@ function TeamPage() {
               className={`team-section-tab ${section === 'members' ? 'team-section-tab-active' : ''}`}
               onClick={() => setSection('members')}
             >
-              👥 Members
+              Members
             </button>
             <button
               className={`team-section-tab ${section === 'quests' ? 'team-section-tab-active' : ''}`}
               onClick={() => setSection('quests')}
             >
-              🎯 Quests
+              Quests
             </button>
           </div>
  
@@ -373,7 +373,7 @@ function TeamPage() {
             {section === 'members' && (
               <>
                 <h2 className="team-section-title" style={{ marginBottom: 14 }}>
-                  👑 Member Leaderboard
+                  Member Leaderboard
                 </h2>
                 <div className="leaderboard-list">
                   {sortedMembers.map((member, index) => {
@@ -384,11 +384,11 @@ function TeamPage() {
                     return (
                       <div key={member.id} className={`leaderboard-row ${isMe ? 'leaderboard-me' : ''}`}>
                         <span className="leaderboard-rank">
-                          {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `#${index + 1}`}
+                          #{index + 1}
                         </span>
                         <span className="leaderboard-name">
                           {name}
-                          {member.role === 'owner' && <span className="owner-badge"> 👑 Owner</span>}
+                          {member.role === 'owner' && <span className="owner-badge"> Owner</span>}
                           {isMe && <span className="me-badge"> (you)</span>}
                         </span>
                         <span className="leaderboard-level">Lv.{level}</span>
@@ -409,7 +409,7 @@ function TeamPage() {
             {section === 'quests' && (
               <>
                 <h2 className="team-section-title" style={{ marginBottom: 14 }}>
-                  🎯 Team Quests
+                  Team Quests
                 </h2>
 
                 {/* Create Quest (team owners only) */}
@@ -421,7 +421,7 @@ function TeamPage() {
                         className="create-quest-btn"
                         onClick={() => setShowCreateQuest(true)}
                       >
-                        ➕ Create Quest
+                        Create Quest
                       </button>
                     ) : (
                       <div className="create-quest-form">
@@ -527,7 +527,7 @@ function TeamPage() {
                               <span className="quest-progress-desc">{quest.description}</span>
                             </div>
                             <span className="quest-progress-xp">+{quest.xpReward} XP</span>
-                            {completed && <span className="quest-done-badge">✓</span>}
+                            {completed && <span className="quest-done-badge">Done</span>}
                           </div>
                           <div className="quest-progress-bar-track">
                             <div
