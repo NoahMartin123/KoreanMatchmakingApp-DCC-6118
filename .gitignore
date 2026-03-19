@@ -7,7 +7,6 @@ GG/socket/node_modules/
 GG/JIC-3200-LinguaLink/node_modules/
 
 # Environment and secrets (do not commit)
-.env
 .env.*
 !.env.example
 
