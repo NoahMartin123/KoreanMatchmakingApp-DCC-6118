@@ -99,6 +99,71 @@
   font-weight: 800;
 }
 
+/* Active challenges section */
+.gs-challenges-section {
+  width: 100%;
+  max-width: 760px;
+  margin-bottom: 24px;
+}
+
+.gs-challenges-title {
+  font-family: var(--dl-font);
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--dl-dark);
+  margin: 0 0 12px 0;
+}
+
+.gs-challenges-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.gs-challenge-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--dl-white);
+  border: 2px solid #ede9fe;
+  border-radius: 12px;
+  padding: 14px 18px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.04);
+}
+
+.gs-challenge-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.gs-challenge-game {
+  font-weight: 800;
+  font-size: 14px;
+  color: var(--dl-primary);
+}
+
+.gs-challenge-opponent {
+  font-size: 12px;
+  color: #666;
+}
+
+.gs-challenge-play {
+  background: var(--dl-primary);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 20px;
+  font-size: 13px;
+  font-weight: 800;
+  font-family: var(--dl-font);
+  cursor: pointer;
+}
+
+.gs-challenge-play:hover {
+  opacity: 0.9;
+}
+
 .game-selection-body {
   width: 100%;
   max-width: 760px;

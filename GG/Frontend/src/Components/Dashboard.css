@@ -25,6 +25,48 @@
   margin: 0;
 }
 
+.dash-challenge-banner {
+  width: 100%;
+  padding: 14px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  color: #fff;
+  font-family: var(--dl-font);
+  font-size: 14px;
+  font-weight: 700;
+  box-sizing: border-box;
+}
+
+.dash-challenge-banner-pending {
+  background: linear-gradient(135deg, #6344A6 0%, #8b5cf6 100%);
+}
+
+.dash-challenge-banner-turn {
+  background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+}
+
+.dash-challenge-banner-btn {
+  background: #fff;
+  color: #6344A6;
+  border: none;
+  padding: 8px 18px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+  font-family: var(--dl-font);
+}
+
+.dash-challenge-banner-turn .dash-challenge-banner-btn {
+  color: #059669;
+}
+
+.dash-challenge-banner-btn:hover {
+  opacity: 0.9;
+}
+
 .dashboard-grid {
   max-width: 960px;
   margin: 28px auto 0;

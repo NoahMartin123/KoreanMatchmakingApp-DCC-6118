@@ -64,6 +64,43 @@
   position: relative;
 }
 
+/* Challenge notification banners */
+.nav-challenge-notification {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 10px 24px;
+  color: #fff;
+  font-family: 'Nunito', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.nav-challenge-notification-pending {
+  background: linear-gradient(135deg, #6344A6 0%, #8b5cf6 100%);
+}
+
+.nav-challenge-notification-turn {
+  background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+}
+
+.nav-challenge-notification-btn {
+  background: #fff;
+  color: #6344A6;
+  border: none;
+  padding: 8px 18px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+  font-family: 'Nunito', sans-serif;
+}
+
+.nav-challenge-notification-btn:hover {
+  opacity: 0.9;
+}
+
 .nav-badge {
   display: inline-flex;
   align-items: center;

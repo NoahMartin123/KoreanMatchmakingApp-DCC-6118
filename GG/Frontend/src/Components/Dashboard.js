@@ -3,6 +3,7 @@ import React from "react";
 import './Dashboard.css';
 import { createSearchParams, useSearchParams, useNavigate } from "react-router-dom";
 import { handleUserDashBoardApi } from '../Services/dashboardService';
+import { getUserChallenges } from '../Services/challengeService';
 import { setUserData } from '../Utils/userData';
 import Navbar from './NavBar';
 
@@ -26,6 +27,8 @@ function Dashboard() {
   const id = search.get("id");
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
+  const [pendingChallenges, setPendingChallenges] = useState(0);
+  const [yourTurnChallenges, setYourTurnChallenges] = useState(0);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -46,6 +49,32 @@ function Dashboard() {
     load();
   }, [id]);
 
+  useEffect(() => {
+    if (!id) return;
+    const fetchChallenges = async () => {
+      try {
+        const res = await getUserChallenges(id);
+        const list = res?.challenges || res?.data?.challenges || [];
+        if (!Array.isArray(list)) return;
+        const pending = list.filter((c) => c.status === 'pending' && Number(c.challengedId) === Number(id)).length;
+        const yourTurn = list.filter((c) => {
+          if (!['accepted', 'in_progress'].includes(c.status)) return false;
+          if (Number(c.challengerId) === Number(id)) return c.challengerScore === null;
+          if (Number(c.challengedId) === Number(id)) return c.challengedScore === null;
+          return false;
+        }).length;
+        setPendingChallenges(pending);
+        setYourTurnChallenges(yourTurn);
+      } catch {
+        setPendingChallenges(0);
+        setYourTurnChallenges(0);
+      }
+    };
+    fetchChallenges();
+    const interval = setInterval(fetchChallenges, 15000);
+    return () => clearInterval(interval);
+  }, [id]);
+
   const goTo = (path) => {
     navigate({ pathname: path, search: createSearchParams({ id }).toString() });
   };
@@ -53,6 +82,19 @@ function Dashboard() {
   return (
     <div className="dashboard-page">
       <Navbar id={id} />
+
+      {pendingChallenges > 0 && (
+        <div className="dash-challenge-banner dash-challenge-banner-pending">
+          <span>You have {pendingChallenges} pending challenge{pendingChallenges !== 1 ? 's' : ''} waiting for your response.</span>
+          <button className="dash-challenge-banner-btn" onClick={() => goTo('/Challenges')}>View Challenges</button>
+        </div>
+      )}
+      {yourTurnChallenges > 0 && pendingChallenges === 0 && (
+        <div className="dash-challenge-banner dash-challenge-banner-turn">
+          <span>It&apos;s your turn to play in {yourTurnChallenges} challenge{yourTurnChallenges !== 1 ? 's' : ''}!</span>
+          <button className="dash-challenge-banner-btn" onClick={() => goTo('/Challenges')}>Play Now</button>
+        </div>
+      )}
 
       <div className="dashboard-welcome">
         <h1>Welcome, {firstName} {lastName}</h1>

@@ -8,6 +8,7 @@ import Navbar from './NavBar';
 import { handleGetUserQuestsApi, handleGetTeamQuestsApi } from '../Services/questService';
 import { handleGetMyTeamApi } from '../Services/teamService';
 import { handleGetAllBadgesWithProgressApi } from '../Services/badgeService';
+import { getUserChallenges } from '../Services/challengeService';
 import { getImageUrl } from '../Services/uploadImageService';
 
 const XP_PER_LEVEL = 500; // Must match the value in gameRoutes.js
@@ -27,6 +28,7 @@ function GameSelect() {
   const [profileImgError, setProfileImgError] = useState(false);
   const [quests, setQuests] = useState([]);
   const [badges, setBadges] = useState([]);
+  const [activeChallenges, setActiveChallenges] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -83,15 +85,35 @@ function GameSelect() {
       console.log('Could not load badges:', err);
     }
   };
- 
+
+  const getActiveChallenges = async () => {
+    try {
+      const res = await getUserChallenges(id);
+      const all = res?.challenges || res?.data?.challenges || [];
+      const active = Array.isArray(all)
+        ? all.filter((c) => ['accepted', 'in_progress'].includes(c.status))
+        : [];
+      setActiveChallenges(active);
+    } catch (err) {
+      console.log('Could not load challenges:', err);
+      setActiveChallenges([]);
+    }
+  };
+
   useEffect(() => {
     if (!id) return;
-    Promise.all([getStats(), getQuests(), getBadges()]).finally(() => setLoading(false));
+    Promise.all([getStats(), getQuests(), getBadges(), getActiveChallenges()]).finally(() => setLoading(false));
   }, [id]);
  
   const getXpPercent = () => Math.min(100, Math.round((xp / xpToNext) * 100));
   const getInitial   = () => username ? username.charAt(0).toUpperCase() : '?';
  
+  const gameRoutes = {
+    'term-matching': '/TermMatching',
+    'grammar-quiz': '/GrammarQuiz',
+    'pronunciation-drill': '/PronunciationDrill',
+  };
+
   const goToTermMatching = () => {
     navigate({ pathname: '/TermMatching', search: createSearchParams({ id }).toString() });
   };
@@ -100,6 +122,24 @@ function GameSelect() {
   };
   const goToPronunciationDrill = () => {
     navigate({ pathname: '/PronunciationDrill', search: createSearchParams({ id }).toString() });
+  };
+
+  const playChallenge = (challenge) => {
+    const path = gameRoutes[challenge.gameType] || '/GameSelection';
+    const params = { id, challengeId: challenge.id, difficulty: challenge.difficulty || 'Beginner' };
+    navigate({ pathname: path, search: createSearchParams(params).toString() });
+  };
+
+  const getOpponentName = (c) => {
+    if (Number(c.challengerId) === Number(id)) {
+      return c.challenged ? `${c.challenged.firstName || ''} ${c.challenged.lastName || ''}`.trim() : `User #${c.challengedId}`;
+    }
+    return c.challenger ? `${c.challenger.firstName || ''} ${c.challenger.lastName || ''}`.trim() : `User #${c.challengerId}`;
+  };
+
+  const gameLabel = (gt) => {
+    const labels = { 'term-matching': 'Term Matching', 'grammar-quiz': 'Grammar Quiz', 'pronunciation-drill': 'Pronunciation Drill' };
+    return labels[gt] || gt;
   };
  
   if (loading) return <div className="loading-state">Loading...</div>;
@@ -138,9 +178,29 @@ function GameSelect() {
         </div>
       </div>
  
+      {/* ── Active Challenges ── */}
+      {activeChallenges.length > 0 && (
+        <div className="gs-challenges-section">
+          <h3 className="gs-challenges-title">Your Challenges</h3>
+          <div className="gs-challenges-list">
+            {activeChallenges.map((c) => (
+              <div key={c.id} className="gs-challenge-card">
+                <div className="gs-challenge-info">
+                  <span className="gs-challenge-game">{gameLabel(c.gameType)}</span>
+                  <span className="gs-challenge-opponent">vs {getOpponentName(c)}</span>
+                </div>
+                <button className="gs-challenge-play" onClick={() => playChallenge(c)}>
+                  Play Now
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* ── Games + Quests ── */}
       <div className="game-selection-body">
- 
+
         {/* Left: Game buttons */}
         <div className="games-column">
           <button className="game-button" onClick={goToTermMatching}>

@@ -29,6 +29,7 @@ function Navbar({ id }) {
   const [menuOpen, setMenuOpen]         = useState(false);
   const [visibleCount, setVisibleCount] = useState(NAV_LINKS.length);
   const [pendingChallenges, setPendingChallenges] = useState(0);
+  const [yourTurnChallenges, setYourTurnChallenges] = useState(0);
   const [pendingTeamInvites, setPendingTeamInvites] = useState(0);
 
   const navbarRef  = useRef(null);
@@ -107,21 +108,34 @@ function Navbar({ id }) {
     return () => { cancelAnimationFrame(frame); ro.disconnect(); };
   }, [calculate]);
 
-  // Fetch pending challenges count for notification badge
+  // Fetch pending + your-turn challenges for notification badges
   useEffect(() => {
     if (!id) return;
-    const fetchPending = async () => {
+    const fetchChallenges = async () => {
       try {
-        const res = await getUserChallenges(id, 'pending');
+        const res = await getUserChallenges(id);
         const list = res?.challenges || res?.data?.challenges || [];
-        const count = Array.isArray(list) ? list.filter((c) => c.status === 'pending' && Number(c.challengedId) === Number(id)).length : 0;
-        setPendingChallenges(count);
+        if (!Array.isArray(list)) {
+          setPendingChallenges(0);
+          setYourTurnChallenges(0);
+          return;
+        }
+        const pending = list.filter((c) => c.status === 'pending' && Number(c.challengedId) === Number(id)).length;
+        const yourTurn = list.filter((c) => {
+          if (!['accepted', 'in_progress'].includes(c.status)) return false;
+          if (Number(c.challengerId) === Number(id)) return c.challengerScore === null;
+          if (Number(c.challengedId) === Number(id)) return c.challengedScore === null;
+          return false;
+        }).length;
+        setPendingChallenges(pending);
+        setYourTurnChallenges(yourTurn);
       } catch {
         setPendingChallenges(0);
+        setYourTurnChallenges(0);
       }
     };
-    fetchPending();
-    const interval = setInterval(fetchPending, 15000);
+    fetchChallenges();
+    const interval = setInterval(fetchChallenges, 15000);
     return () => clearInterval(interval);
   }, [id]);
 
@@ -155,6 +169,7 @@ function Navbar({ id }) {
   const hiddenLinks = NAV_LINKS.slice(visibleCount);
  
   return (
+    <>
     <nav className="navbar" ref={navbarRef}>
       <div className="navbar-links">
         {NAV_LINKS.map((link, i) => (
@@ -172,9 +187,9 @@ function Navbar({ id }) {
             }}
           >
             {link.label}
-            {link.path === '/Challenges' && pendingChallenges > 0 && (
-              <span className="nav-badge" aria-label={`${pendingChallenges} pending challenge${pendingChallenges !== 1 ? 's' : ''}`}>
-                {pendingChallenges}
+            {link.path === '/Challenges' && (pendingChallenges > 0 || yourTurnChallenges > 0) && (
+              <span className="nav-badge" aria-label={`${pendingChallenges + yourTurnChallenges} challenge${pendingChallenges + yourTurnChallenges !== 1 ? 's' : ''} need attention`}>
+                {pendingChallenges + yourTurnChallenges}
               </span>
             )}
             {link.path === '/TeamLobby' && pendingTeamInvites > 0 && (
@@ -208,8 +223,8 @@ function Navbar({ id }) {
                     onClick={() => goTo(link.path)}
                   >
                     {link.label}
-                    {link.path === '/Challenges' && pendingChallenges > 0 && (
-                      <span className="nav-badge nav-badge-dropdown">{pendingChallenges}</span>
+                    {link.path === '/Challenges' && (pendingChallenges > 0 || yourTurnChallenges > 0) && (
+                      <span className="nav-badge nav-badge-dropdown">{pendingChallenges + yourTurnChallenges}</span>
                     )}
                     {link.path === '/TeamLobby' && pendingTeamInvites > 0 && (
                       <span className="nav-badge nav-badge-dropdown">{pendingTeamInvites}</span>
@@ -226,6 +241,8 @@ function Navbar({ id }) {
         </button>
       </div>
     </nav>
+
+    </>
   );
 }
  
