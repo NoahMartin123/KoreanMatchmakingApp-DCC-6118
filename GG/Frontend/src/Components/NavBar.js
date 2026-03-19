@@ -1,12 +1,14 @@
- 
+
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, createSearchParams, useLocation } from 'react-router-dom';
+import { getUserChallenges } from '../Services/challengeService';
+import { handleGetTeamInvitesApi } from '../Services/teamService';
+import { useTranslator } from '../context/TranslatorContext';
 import './NavBar.css';
- 
+
 const NAV_LINKS = [
   { label: 'Home',         path: '/Dashboard' },
   { label: 'Games',        path: '/GameSelection' },
-  { label: 'Find Friends', path: '/FriendSearch' },
   { label: 'Friends',      path: '/FriendsList' },
   { label: 'Challenges',   path: '/Challenges' },
   { label: 'Teams',        path: '/TeamLobby' },
@@ -22,10 +24,13 @@ const HAMBURGER_WIDTH = 48;
 function Navbar({ id }) {
   const navigate = useNavigate();
   const location = useLocation();
+  const { toggleTranslator } = useTranslator();
  
   const [menuOpen, setMenuOpen]         = useState(false);
   const [visibleCount, setVisibleCount] = useState(NAV_LINKS.length);
- 
+  const [pendingChallenges, setPendingChallenges] = useState(0);
+  const [pendingTeamInvites, setPendingTeamInvites] = useState(0);
+
   const navbarRef  = useRef(null);
   const rightRef   = useRef(null);
   const buttonRefs = useRef([]);
@@ -101,6 +106,41 @@ function Navbar({ id }) {
     if (navbarRef.current) ro.observe(navbarRef.current);
     return () => { cancelAnimationFrame(frame); ro.disconnect(); };
   }, [calculate]);
+
+  // Fetch pending challenges count for notification badge
+  useEffect(() => {
+    if (!id) return;
+    const fetchPending = async () => {
+      try {
+        const res = await getUserChallenges(id, 'pending');
+        const list = res?.challenges || res?.data?.challenges || [];
+        const count = Array.isArray(list) ? list.filter((c) => c.status === 'pending' && Number(c.challengedId) === Number(id)).length : 0;
+        setPendingChallenges(count);
+      } catch {
+        setPendingChallenges(0);
+      }
+    };
+    fetchPending();
+    const interval = setInterval(fetchPending, 15000);
+    return () => clearInterval(interval);
+  }, [id]);
+
+  // Fetch pending team invites (only when user is not in a team - we show badge anyway)
+  useEffect(() => {
+    if (!id) return;
+    const fetchTeamInvites = async () => {
+      try {
+        const res = await handleGetTeamInvitesApi(id);
+        const list = res?.invites || [];
+        setPendingTeamInvites(Array.isArray(list) ? list.length : 0);
+      } catch {
+        setPendingTeamInvites(0);
+      }
+    };
+    fetchTeamInvites();
+    const interval = setInterval(fetchTeamInvites, 15000);
+    return () => clearInterval(interval);
+  }, [id]);
  
   // Close dropdown on outside click
   useEffect(() => {
@@ -132,10 +172,20 @@ function Navbar({ id }) {
             }}
           >
             {link.label}
+            {link.path === '/Challenges' && pendingChallenges > 0 && (
+              <span className="nav-badge" aria-label={`${pendingChallenges} pending challenge${pendingChallenges !== 1 ? 's' : ''}`}>
+                {pendingChallenges}
+              </span>
+            )}
+            {link.path === '/TeamLobby' && pendingTeamInvites > 0 && (
+              <span className="nav-badge nav-badge-team" aria-label={`${pendingTeamInvites} team invite${pendingTeamInvites !== 1 ? 's' : ''}`}>
+                {pendingTeamInvites}
+              </span>
+            )}
           </button>
         ))}
       </div>
- 
+
       <div className="navbar-right" ref={rightRef}>
         {hiddenLinks.length > 0 && (
           <div className="hamburger-wrapper">
@@ -148,7 +198,7 @@ function Navbar({ id }) {
               <span className="hamburger-bar" />
               <span className="hamburger-bar" />
             </button>
- 
+
             {menuOpen && (
               <div className="navbar-dropdown">
                 {hiddenLinks.map((link) => (
@@ -158,6 +208,12 @@ function Navbar({ id }) {
                     onClick={() => goTo(link.path)}
                   >
                     {link.label}
+                    {link.path === '/Challenges' && pendingChallenges > 0 && (
+                      <span className="nav-badge nav-badge-dropdown">{pendingChallenges}</span>
+                    )}
+                    {link.path === '/TeamLobby' && pendingTeamInvites > 0 && (
+                      <span className="nav-badge nav-badge-dropdown">{pendingTeamInvites}</span>
+                    )}
                   </button>
                 ))}
               </div>
@@ -165,7 +221,7 @@ function Navbar({ id }) {
           </div>
         )}
  
-        <button className="nav-translator-btn" onClick={() => goTo('/Translator')}>
+        <button className="nav-translator-btn" onClick={toggleTranslator}>
           Translator
         </button>
       </div>

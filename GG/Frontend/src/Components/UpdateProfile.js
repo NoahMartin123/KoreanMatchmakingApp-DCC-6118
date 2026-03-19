@@ -21,8 +21,8 @@ import { getChallengeStats } from '../Services/challengeService';
 import { createSearchParams, useNavigate, useSearchParams } from "react-router-dom";
 
 const selectStyles = {
-  control: (base) => ({ ...base, borderRadius: 6, borderColor: '#d4d4d8', fontSize: 14, fontFamily: "'HK Sentiments', sans-serif" }),
-  option: (base) => ({ ...base, fontSize: 14, fontFamily: "'HK Sentiments', sans-serif" }),
+  control: (base) => ({ ...base, borderRadius: 6, borderColor: '#d4d4d8', fontSize: 14, fontFamily: "var(--dl-font)" }),
+  option: (base) => ({ ...base, fontSize: 14, fontFamily: "var(--dl-font)" }),
 };
 
 function UpdateProfile() {
@@ -261,7 +261,7 @@ function UpdateProfile() {
         <Navbar id={id} />
         <div className="up-center">
           <div className="up-card" style={{ textAlign: 'center', padding: 60 }}>
-            <p style={{ color: '#364659', fontFamily: 'DM Serif Display, serif', fontSize: 18 }}>Loading your profile...</p>
+            <p style={{ color: '#364659', fontFamily: 'var(--dl-font)', fontSize: 18 }}>Loading your profile...</p>
           </div>
         </div>
       </div>
@@ -461,11 +461,11 @@ function UpdateProfile() {
 
             <div className="up-wizard-footer">
               <button
-                className="up-btn-secondary"
+                className={step === 0 ? 'back-to-dashboard' : 'up-btn-secondary'}
                 type="button"
                 onClick={step === 0 ? handleBack : prevStep}
               >
-                {step === 0 ? 'Back to Dashboard' : 'Back'}
+                {step === 0 ? 'Dashboard' : 'Back'}
               </button>
 
               {step < STEPS.length - 1 ? (

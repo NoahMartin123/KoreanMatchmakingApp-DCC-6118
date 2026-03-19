@@ -33,6 +33,11 @@ export default (sequelize, DataTypes) => {
       allowNull: true,
       defaultValue: null,
     },
+    profileImage: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      defaultValue: null,
+    },
   }, {
     sequelize,
     modelName: 'UserAccount',

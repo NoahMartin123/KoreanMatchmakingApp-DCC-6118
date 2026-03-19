@@ -1,9 +1,9 @@
 .tl-page {
   min-height: 100vh;
-  background: linear-gradient(135deg, rgba(34, 193, 195, 1) 0%, rgba(253, 187, 45, 1) 100%);
+  background: var(--dl-page-bg);
   display: flex;
   flex-direction: column;
-  font-family: 'HK Sentiments', sans-serif;
+  font-family: var(--dl-font);
 }
 
 .tl-center {
@@ -28,18 +28,70 @@
 }
 
 .tl-title {
-  font-family: 'DM Serif Display', serif;
+  font-family: var(--dl-font);
   font-size: 24px;
   color: #364659;
   margin: 0;
   text-align: center;
 }
 
+.tl-direction {
+  display: flex;
+  gap: 12px;
+}
+
+.tl-dir-btn {
+  flex: 1;
+  padding: 10px 16px;
+  border: 2px solid var(--dl-gray-light);
+  background: #fff;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--dl-gray-dark);
+  cursor: pointer;
+  font-family: var(--dl-font);
+  transition: all 0.2s;
+}
+
+.tl-dir-btn:hover {
+  border-color: var(--dl-primary);
+  color: var(--dl-primary);
+}
+
+.tl-dir-btn.active {
+  background: var(--dl-primary);
+  border-color: var(--dl-primary);
+  color: #fff;
+}
+
 .tl-panel {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr auto 1fr;
   gap: 16px;
   align-items: start;
+}
+
+.tl-swap {
+  align-self: center;
+  width: 40px;
+  height: 40px;
+  border: 2px solid var(--dl-gray-light);
+  background: #fff;
+  border-radius: 50%;
+  font-size: 20px;
+  color: var(--dl-primary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 28px;
+  transition: all 0.2s;
+}
+
+.tl-swap:hover {
+  background: rgba(99, 68, 166, 0.1);
+  border-color: var(--dl-primary);
 }
 
 .tl-column {
@@ -69,7 +121,7 @@
   color: #364659;
   resize: none;
   font-size: 14px;
-  font-family: 'HK Sentiments', sans-serif;
+  font-family: var(--dl-font);
   line-height: 1.5;
   box-sizing: border-box;
   transition: border-color 0.2s;
@@ -101,7 +153,7 @@
   font-size: 14px;
   font-weight: bold;
   cursor: pointer;
-  font-family: 'HK Sentiments', sans-serif;
+  font-family: var(--dl-font);
   transition: box-shadow 0.2s;
   height: 44px;
 }
@@ -119,7 +171,7 @@
   font-size: 14px;
   font-weight: bold;
   cursor: pointer;
-  font-family: 'HK Sentiments', sans-serif;
+  font-family: var(--dl-font);
   transition: background-color 0.2s;
   height: 44px;
 }
@@ -129,6 +181,13 @@
 }
 
 @media (max-width: 600px) {
-  .tl-panel { grid-template-columns: 1fr; }
+  .tl-panel {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto auto;
+  }
+  .tl-swap {
+    margin: 0;
+    transform: rotate(90deg);
+  }
   .tl-controls { grid-template-columns: 1fr; }
 }

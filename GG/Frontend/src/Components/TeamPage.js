@@ -7,9 +7,10 @@ import {
   handleKickMemberApi,
   handleLeaveTeamApi,
   handleDisbandTeamApi,
-  handleGetInviteCodeApi,
+  handleSendTeamInviteApi,
 } from '../Services/teamService';
-import { handleGetTeamQuestsApi } from '../Services/questService';
+import { handleGetTrueFriendsList } from '../Services/userService';
+import { handleGetTeamQuestsApi, handleCreateQuestApi } from '../Services/questService';
 import './Team.css';
 import ImageUpload from './ImageUpload';
 import { handleUploadTeamImageApi, handleRemoveTeamImageApi, getImageUrl } from '../Services/uploadImageService';
@@ -31,7 +32,9 @@ function TeamPage() {
   const [errMsg, setErrMsg]         = useState('');
   const [successMsg, setSuccessMsg] = useState('');
   const [codeCopied, setCodeCopied] = useState(false);
- 
+  const [friends, setFriends] = useState([]);
+  const [shareSentTo, setShareSentTo] = useState(null);
+
   // Edit mode
   const [editing, setEditing]   = useState(false);
   const [editName, setEditName] = useState('');
@@ -39,6 +42,16 @@ function TeamPage() {
  
   // Active section tab
   const [section, setSection] = useState('members'); // 'members' | 'quests'
+
+  // Create quest form (team owners only)
+  const [showCreateQuest, setShowCreateQuest] = useState(false);
+  const [questTitle, setQuestTitle] = useState('');
+  const [questDesc, setQuestDesc] = useState('');
+  const [questGameType, setQuestGameType] = useState('');
+  const [questGoal, setQuestGoal] = useState(5);
+  const [questXp, setQuestXp] = useState(50);
+  const [questReset, setQuestReset] = useState('permanent');
+  const [creatingQuest, setCreatingQuest] = useState(false);
  
   const fetchTeam = async () => {
     try {
@@ -68,6 +81,18 @@ function TeamPage() {
   };
  
   useEffect(() => { fetchTeam(); }, [id]);
+
+  useEffect(() => {
+    const loadFriends = async () => {
+      try {
+        const payload = await handleGetTrueFriendsList(id);
+        setFriends(Array.isArray(payload?.friendsList) ? payload.friendsList : []);
+      } catch (e) {
+        setFriends([]);
+      }
+    };
+    if (id) loadFriends();
+  }, [id]);
  
   const flash = (msg, isError = false) => {
     if (isError) { setErrMsg(msg); setTimeout(() => setErrMsg(''), 3000); }
@@ -79,6 +104,21 @@ function TeamPage() {
     setCodeCopied(true);
     setTimeout(() => setCodeCopied(false), 2000);
   };
+
+  const handleShareWithFriend = async (friend) => {
+    try {
+      await handleSendTeamInviteApi(id, friend.id);
+      navigator.clipboard.writeText(team.inviteCode);
+      setShareSentTo(friend.id);
+      flash(`${friend.firstName} will see a notification to join your team!`);
+      setTimeout(() => setShareSentTo(null), 3000);
+    } catch (err) {
+      flash(err?.response?.data?.error || 'Failed to send invite.', true);
+    }
+  };
+
+  const teamMemberIds = new Set((team?.members || []).map((m) => String(m.userId)));
+  const friendsNotInTeam = friends.filter((f) => !teamMemberIds.has(String(f.id)));
  
   const handleSaveEdit = async () => {
     setErrMsg('');
@@ -128,6 +168,39 @@ function TeamPage() {
       pathname: '/Dashboard',
       search: createSearchParams({ id }).toString(),
     });
+  };
+
+  const handleCreateQuest = async () => {
+    if (!questTitle.trim() || !questDesc.trim()) {
+      flash('Title and description are required.', true);
+      return;
+    }
+    setCreatingQuest(true);
+    setErrMsg('');
+    try {
+      await handleCreateQuestApi({
+        title: questTitle.trim(),
+        description: questDesc.trim(),
+        type: 'team',
+        gameType: questGameType || null,
+        goal: Math.max(1, Number(questGoal) || 1),
+        xpReward: Math.max(1, Number(questXp) || 50),
+        resetType: questReset || 'permanent',
+      });
+      flash('Quest created!');
+      setQuestTitle('');
+      setQuestDesc('');
+      setQuestGameType('');
+      setQuestGoal(5);
+      setQuestXp(50);
+      setQuestReset('permanent');
+      setShowCreateQuest(false);
+      fetchTeam();
+    } catch (err) {
+      flash(err?.response?.data?.error || 'Failed to create quest.', true);
+    } finally {
+      setCreatingQuest(false);
+    }
   };
  
   if (loading) return <div className="team-loading">Loading...</div>;
@@ -227,14 +300,36 @@ function TeamPage() {
                   {codeCopied ? '✓ Copied' : '📋 Copy'}
                 </button>
               </div>
- 
+
+              {/* Share with friends */}
+              {friendsNotInTeam.length > 0 && (
+                <div className="team-share-section">
+                  <p className="team-share-title">Invite a friend to your team</p>
+                  <p className="team-share-desc">
+                    Click to send an invite — they'll see a notification and can accept to join. The code is also copied so you can share via text if needed.
+                  </p>
+                  <div className="team-share-friends">
+                    {friendsNotInTeam.map((f) => (
+                      <button
+                        key={f.id}
+                        type="button"
+                        className="team-share-btn"
+                        onClick={() => handleShareWithFriend(f)}
+                      >
+                        {shareSentTo === f.id
+                          ? `✓ Invite sent to ${f.firstName}!`
+                          : `Invite ${f.firstName} ${f.lastName || ''}`.trim()}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {successMsg && <p className="team-success">{successMsg}</p>}
               {errMsg     && <p className="team-error">{errMsg}</p>}
  
               <div className="team-btn-row">
-                <button className="team-btn-secondary" onClick={handleBackToDashboard}>
-                  Back to Dashboard
-                </button>
+                <button className="back-to-dashboard" onClick={handleBackToDashboard}>Dashboard</button>
                 {myRole === 'owner' && (
                   <>
                     <button className="team-btn-secondary" onClick={() => setEditing(true)}>
@@ -316,6 +411,104 @@ function TeamPage() {
                 <h2 className="team-section-title" style={{ marginBottom: 14 }}>
                   🎯 Team Quests
                 </h2>
+
+                {/* Create Quest (team owners only) */}
+                {myRole === 'owner' && (
+                  <div className="create-quest-section">
+                    {!showCreateQuest ? (
+                      <button
+                        type="button"
+                        className="create-quest-btn"
+                        onClick={() => setShowCreateQuest(true)}
+                      >
+                        ➕ Create Quest
+                      </button>
+                    ) : (
+                      <div className="create-quest-form">
+                        <h3 className="create-quest-form-title">New Team Quest</h3>
+                        <input
+                          className="create-quest-input"
+                          placeholder="Quest title"
+                          value={questTitle}
+                          onChange={(e) => setQuestTitle(e.target.value)}
+                          maxLength={80}
+                        />
+                        <input
+                          className="create-quest-input"
+                          placeholder="Description (e.g. Complete 5 Term Matching games)"
+                          value={questDesc}
+                          onChange={(e) => setQuestDesc(e.target.value)}
+                          maxLength={120}
+                        />
+                        <select
+                          className="create-quest-select"
+                          value={questGameType}
+                          onChange={(e) => setQuestGameType(e.target.value)}
+                        >
+                          <option value="">Any game</option>
+                          <option value="term-matching">Term Matching</option>
+                          <option value="grammar-quiz">Grammar Quiz</option>
+                          <option value="pronunciation-drill">Pronunciation Drill</option>
+                        </select>
+                        <div className="create-quest-row">
+                          <label>
+                            <span>Goal:</span>
+                            <input
+                              type="number"
+                              min={1}
+                              max={999}
+                              value={questGoal}
+                              onChange={(e) => setQuestGoal(Number(e.target.value) || 1)}
+                              className="create-quest-num"
+                            />
+                          </label>
+                          <label>
+                            <span>XP reward:</span>
+                            <input
+                              type="number"
+                              min={1}
+                              max={500}
+                              value={questXp}
+                              onChange={(e) => setQuestXp(Number(e.target.value) || 50)}
+                              className="create-quest-num"
+                            />
+                          </label>
+                        </div>
+                        <select
+                          className="create-quest-select"
+                          value={questReset}
+                          onChange={(e) => setQuestReset(e.target.value)}
+                        >
+                          <option value="permanent">Permanent (one-time)</option>
+                          <option value="daily">Daily (resets each day)</option>
+                          <option value="weekly">Weekly (resets each week)</option>
+                        </select>
+                        <div className="create-quest-btn-row">
+                          <button
+                            type="button"
+                            className="team-btn-secondary"
+                            onClick={() => {
+                              setShowCreateQuest(false);
+                              setQuestTitle('');
+                              setQuestDesc('');
+                            }}
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            type="button"
+                            className="team-btn-primary"
+                            onClick={handleCreateQuest}
+                            disabled={creatingQuest}
+                          >
+                            {creatingQuest ? 'Creating…' : 'Create Quest'}
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 {quests.length === 0 ? (
                   <p style={{ fontSize: 13, color: '#888', textAlign: 'center', margin: 0 }}>
                     No quests available yet.

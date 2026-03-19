@@ -58,18 +58,18 @@ function Videocall() {
 
   return (
     <div className="vc-page">
-      <Navbar id={userId} />
+      {!joined && <Navbar id={userId} />}
       <div className="vc-center">
         <div className="video-call-container">
           {!joined ? (
             <div className="join-card">
-              <h2 className="join-title">Join a Video Room</h2>
+              <h2 className="join-title">Ready to join?</h2>
               <p className="join-subtitle">
-                Enter a room name or code. You’ll confirm AI access on the next step.
+                Enter a meeting code or create your own. You’ll confirm AI access before joining.
               </p>
 
               <div className="join-form">
-                <label htmlFor="room-input" className="join-label">Room name or code</label>
+                <label htmlFor="room-input" className="join-label">Meeting code</label>
                 <Form.Control
                   id="room-input"
                   placeholder="e.g., spanish-101 or A3F9XZ"
@@ -83,8 +83,8 @@ function Videocall() {
               </div>
 
               <div className="join-actions">
-                <button className="btn-cta" onClick={handleJoinClick}>Join Room</button>
-                <button className="btn-ghost" onClick={goHome}>Back to Dashboard</button>
+                <button className="btn-cta" onClick={handleJoinClick}>Join</button>
+                <button className="back-to-dashboard" onClick={goHome}>Dashboard</button>
               </div>
             </div>
           ) : (

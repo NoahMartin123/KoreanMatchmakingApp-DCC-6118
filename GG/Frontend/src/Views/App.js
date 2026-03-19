@@ -16,6 +16,8 @@ import store from "../store/ReduxStore";
 import { useDispatch } from "react-redux";
 import HelpPage from '../Components/HelpPage';
 import Translator from "../Components/Translator";
+import TranslatorPanel from "../Components/TranslatorPanel";
+import { TranslatorProvider } from "../context/TranslatorContext";
 import Videocall from "../Components/Videocall";
 import PostVideocall from '../Components/PostVideocall';
 import FriendSearch from '../Components/FriendSearch';
@@ -39,7 +41,7 @@ const App = () => {
 
   return (
     <div className="App">
-
+      <TranslatorProvider>
       <Router>
        <Routes>
           <Route path ="/" element ={<Home />}/>
@@ -71,7 +73,8 @@ const App = () => {
           <Route path="/TeamPage"   element={<TeamPage />} />
        </Routes>
       </Router>
-
+      <TranslatorPanel />
+      </TranslatorProvider>
     </div>
   );
 }

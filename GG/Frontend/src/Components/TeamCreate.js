@@ -1,10 +1,11 @@
 // TeamCreate.js
 // Place in: GG/Frontend/src/Components/Team/TeamCreate.js
  
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate, createSearchParams } from 'react-router-dom';
 import Navbar from './NavBar';
-import { handleTeamCreateApi } from '../Services/teamService';
+import { handleTeamCreateApi, handleSendTeamInviteApi } from '../Services/teamService';
+import { handleGetTrueFriendsList } from '../Services/userService';
 import ImageUpload from './ImageUpload';
 import { handleUploadTeamImageApi, getImageUrl } from '../Services/uploadImageService';
 import './Team.css';
@@ -25,9 +26,24 @@ function TeamCreate() {
   const [errMsg, setErrMsg]     = useState('');
   const [loading, setLoading]   = useState(false);
  
-  // Step 2 — image upload after team is created
-  const [step, setStep]             = useState(1); // 1 = details, 2 = image upload
+  // Step 2 — image upload + optional invite after team is created
+  const [step, setStep]             = useState(1);
   const [teamImage, setTeamImage]   = useState(null);
+  const [friends, setFriends]       = useState([]);
+  const [inviteFriendId, setInviteFriendId] = useState('');
+  const [inviteSent, setInviteSent]  = useState(false);
+
+  useEffect(() => {
+    const loadFriends = async () => {
+      try {
+        const payload = await handleGetTrueFriendsList(id);
+        setFriends(Array.isArray(payload?.friendsList) ? payload.friendsList : []);
+      } catch {
+        setFriends([]);
+      }
+    };
+    if (id && step === 2) loadFriends();
+  }, [id, step]);
  
   const handleCreate = async () => {
     setErrMsg('');
@@ -134,6 +150,45 @@ function TeamCreate() {
                   label="Team Image (optional)"
                 />
               </div>
+
+              {friends.length > 0 && (
+                <div className="team-share-section" style={{ marginTop: 8 }}>
+                  <p className="team-share-title">Invite a friend to your new team</p>
+                  <p className="team-share-desc">They'll get a notification and can accept to join.</p>
+                  <div className="team-share-friends">
+                    <select
+                      className="team-input"
+                      value={inviteFriendId}
+                      onChange={(e) => setInviteFriendId(e.target.value)}
+                      style={{ minWidth: 180 }}
+                    >
+                      <option value="">Select a friend...</option>
+                      {friends.map((f) => (
+                        <option key={f.id} value={f.id}>
+                          {f.firstName} {f.lastName || ''}
+                        </option>
+                      ))}
+                    </select>
+                    <button
+                      type="button"
+                      className="team-share-btn"
+                      disabled={!inviteFriendId || inviteSent}
+                      onClick={async () => {
+                        if (!inviteFriendId) return;
+                        try {
+                          await handleSendTeamInviteApi(id, inviteFriendId);
+                          setInviteSent(true);
+                          setInviteFriendId('');
+                        } catch (err) {
+                          console.error(err);
+                        }
+                      }}
+                    >
+                      {inviteSent ? '✓ Invite sent!' : 'Send invite'}
+                    </button>
+                  </div>
+                </div>
+              )}
  
               <div className="team-btn-row">
                 <button className="team-btn-secondary" onClick={handleFinish}>

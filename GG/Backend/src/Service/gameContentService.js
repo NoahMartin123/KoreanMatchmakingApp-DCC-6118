@@ -385,6 +385,8 @@ export function getGrammarQuizRound(difficulty = 'Beginner', count = 5) {
     id: i,
     question: q.question,
     options: q.options,
+    correctIndex: q.correctIndex,
+    explanation: q.explanation,
   }));
 }
 

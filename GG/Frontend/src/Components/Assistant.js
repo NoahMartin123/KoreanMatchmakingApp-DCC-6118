@@ -26,7 +26,7 @@ export default function Assistant() {
   const [chatId, setChatId] = useState(null);
   const [history, setHistory] = useState([]);
   const [messages, setMessages] = useState([
-    { role: "assistant", text: "Hi! I'm your Language Exchange Learning Assistant. How can I help?" }
+    { role: "assistant", text: "Hi! I'm your language exchange assistant. How can I help you today?" }
   ]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -159,8 +159,13 @@ export default function Assistant() {
       else response = await handleChatWithAssistant(trimmedInput, null, userId, chatId);
       setMessages(m => [...m, { role: "assistant", text: response.reply || "I'm sorry, I couldn't process that." }]);
       if (!isAudio) setInput("");
-    } catch {
-      setMessages(m => [...m, { role: "assistant", text: "Sorry! There was a backend error. Please try again." }]);
+    } catch (err) {
+      const errMsg = err?.response?.data?.error || err?.message;
+      const isConfigError = err?.response?.status === 503;
+      const text = isConfigError
+        ? `Sorry! ${errMsg}`
+        : "Sorry! There was a backend error. Please try again.";
+      setMessages(m => [...m, { role: "assistant", text }]);
     } finally { setIsLoading(false); }
   };
 
@@ -229,7 +234,7 @@ export default function Assistant() {
     if (!userId || !window.confirm("Clear conversation?")) return;
     try {
       await handleClearConversation(userId);
-      setMessages([{ role: "assistant", text: "Hi! I'm your Chat Assistant. How can I help?" }]);
+      setMessages([{ role: "assistant", text: "Hi! I'm your language exchange assistant. How can I help you today?" }]);
       setAudioBlob(null);
       alert("Conversation cleared.");
     } catch { alert("Failed to clear conversation."); }
@@ -302,9 +307,7 @@ export default function Assistant() {
           </form>
 
           <div className="ast-footer">
-            <button className="ast-footer-btn ast-btn-back" onClick={() => navigate(`/Dashboard?id=${userId}`)}>
-              Back
-            </button>
+            <button className="back-to-dashboard" onClick={() => navigate(`/Dashboard?id=${userId}`)}>Dashboard</button>
             <button className="ast-footer-btn ast-btn-avail" onClick={() => navigate(`/AvailabilityPicker?id=${userId}&returnTo=Assistant`)}>
               Select Availability
             </button>

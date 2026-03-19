@@ -11,12 +11,12 @@ const selectStyles = {
     borderRadius: 8,
     borderColor: '#d4d4d8',
     fontSize: 14,
-    fontFamily: "'HK Sentiments', sans-serif",
+    fontFamily: "var(--dl-font)",
   }),
   option: (base) => ({
     ...base,
     fontSize: 14,
-    fontFamily: "'HK Sentiments', sans-serif",
+    fontFamily: "var(--dl-font)",
   }),
 };
 
@@ -138,9 +138,7 @@ function UserReport() {
             <button className="ur-btn-primary" type="button" onClick={handleFetchUser}>
               Fetch User
             </button>
-            <button className="ur-btn-secondary" type="button" onClick={handleBack}>
-              Back to Dashboard
-            </button>
+            <button className="back-to-dashboard" type="button" onClick={handleBack}>Dashboard</button>
           </div>
 
           {reportError && (

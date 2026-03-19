@@ -23,8 +23,9 @@ async function areUsersFriends(userIdA, userIdB) {
     `
       SELECT 1
       FROM FriendsModel
-      WHERE (user1_ID = :userIdA AND user2_ID = :userIdB)
-         OR (user1_ID = :userIdB AND user2_ID = :userIdA)
+      WHERE ((user1_ID = :userIdA AND user2_ID = :userIdB)
+         OR (user1_ID = :userIdB AND user2_ID = :userIdA))
+        AND status = 'accepted'
       LIMIT 1
     `,
     {
@@ -43,6 +44,7 @@ async function getFriendOptions(userId) {
       FROM FriendsModel f
       JOIN UserAccount u ON (u.id = f.user2_ID AND f.user1_ID = :userId)
                        OR (u.id = f.user1_ID AND f.user2_ID = :userId)
+      WHERE f.status = 'accepted'
       ORDER BY u.firstName ASC, u.lastName ASC, u.id ASC
     `,
     { replacements: { userId }, type: QueryTypes.SELECT }

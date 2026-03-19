@@ -217,8 +217,6 @@ router.delete('/disband', async (req, res) => {
   }
 });
  
-export default router;
- 
 // ── GET /api/teams/search?name=xxx
 // Search for teams by name (for join by search)
 router.get('/search', async (req, res) => {
@@ -240,9 +238,8 @@ router.get('/search', async (req, res) => {
 });
  
 // ── POST /api/teams/invite
-// Body: { ownerId, targetUserId }
-// Owner sends a direct invite — here we return the invite code for
-// simplicity; the frontend can display it to share with the target user
+// Body: { ownerId }
+// Owner fetches invite code (legacy)
 router.post('/invite', async (req, res) => {
   try {
     const { ownerId } = req.body;
@@ -256,4 +253,128 @@ router.post('/invite', async (req, res) => {
     return res.status(500).json({ error: 'Internal server error' });
   }
 });
- 
+
+// ── POST /api/teams/send-invite
+// Body: { inviterId, inviteeId }
+// Owner sends a direct invite to a friend — they will see a notification
+router.post('/send-invite', async (req, res) => {
+  try {
+    const { inviterId, inviteeId } = req.body;
+    if (!inviterId || !inviteeId) {
+      return res.status(400).json({ error: 'inviterId and inviteeId are required' });
+    }
+
+    const membership = await db.TeamMember.findOne({ where: { userId: inviterId, role: 'owner' } });
+    if (!membership) {
+      return res.status(403).json({ error: 'Only the team owner can send invites.' });
+    }
+
+    const inviteeInTeam = await db.TeamMember.findOne({ where: { userId: inviteeId } });
+    if (inviteeInTeam) {
+      return res.status(400).json({ error: 'This friend is already in a team.' });
+    }
+
+    const [invite] = await db.TeamInvite.findOrCreate({
+      where: { teamId: membership.teamId, inviteeId },
+      defaults: { inviterId, inviteeId, status: 'pending' },
+    });
+
+    if (invite.status !== 'pending') {
+      await invite.update({ status: 'pending' });
+    }
+
+    const team = await db.Team.findByPk(membership.teamId, { attributes: ['id', 'name', 'logo'] });
+    return res.status(201).json({ invite, team });
+  } catch (err) {
+    console.error('Error sending team invite:', err);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// ── GET /api/teams/invites/:userId
+// Get pending team invites for a user
+router.get('/invites/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const invites = await db.TeamInvite.findAll({
+      where: { inviteeId: userId, status: 'pending' },
+      include: [
+        { model: db.Team, attributes: ['id', 'name', 'logo', 'totalXP'] },
+        { model: db.UserAccount, as: 'inviter', attributes: ['id', 'firstName', 'lastName'] },
+      ],
+      order: [['createdAt', 'DESC']],
+    });
+    return res.status(200).json({ invites });
+  } catch (err) {
+    console.error('Error fetching team invites:', err);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// ── POST /api/teams/invites/:inviteId/accept
+// Body: { userId }
+// Accept invite and join the team
+router.post('/invites/:inviteId/accept', async (req, res) => {
+  try {
+    const { inviteId } = req.params;
+    const { userId } = req.body;
+    if (!userId) return res.status(400).json({ error: 'userId is required' });
+
+    const invite = await db.TeamInvite.findByPk(inviteId);
+    if (!invite) return res.status(404).json({ error: 'Invite not found.' });
+    if (Number(invite.inviteeId) !== Number(userId)) {
+      return res.status(403).json({ error: 'This invite is not for you.' });
+    }
+    if (invite.status !== 'pending') {
+      return res.status(400).json({ error: 'This invite has already been responded to.' });
+    }
+
+    const existing = await db.TeamMember.findOne({ where: { userId } });
+    if (existing) {
+      await invite.update({ status: 'declined' });
+      return res.status(400).json({ error: 'You are already in a team. Leave your current team first.' });
+    }
+
+    await db.TeamMember.create({ teamId: invite.teamId, userId, role: 'member' });
+    await invite.update({ status: 'accepted' });
+
+    const team = await db.Team.findByPk(invite.teamId, {
+      include: [{
+        model: db.TeamMember,
+        as: 'members',
+        include: [{ model: db.UserAccount, as: 'user', attributes: ['id', 'firstName', 'lastName', 'xp', 'level'] }],
+      }],
+    });
+    return res.status(200).json({ team });
+  } catch (err) {
+    console.error('Error accepting team invite:', err);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// ── POST /api/teams/invites/:inviteId/decline
+// Body: { userId }
+router.post('/invites/:inviteId/decline', async (req, res) => {
+  try {
+    const { inviteId } = req.params;
+    const { userId } = req.body;
+    if (!userId) return res.status(400).json({ error: 'userId is required' });
+
+    const invite = await db.TeamInvite.findByPk(inviteId);
+    if (!invite) return res.status(404).json({ error: 'Invite not found.' });
+    if (Number(invite.inviteeId) !== Number(userId)) {
+      return res.status(403).json({ error: 'This invite is not for you.' });
+    }
+    if (invite.status !== 'pending') {
+      return res.status(400).json({ error: 'This invite has already been responded to.' });
+    }
+
+    await invite.update({ status: 'declined' });
+    return res.status(200).json({ message: 'Invite declined.' });
+  } catch (err) {
+    console.error('Error declining team invite:', err);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+export default router;

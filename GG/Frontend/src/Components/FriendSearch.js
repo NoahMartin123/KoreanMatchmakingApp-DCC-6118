@@ -1,12 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { FiUserPlus } from 'react-icons/fi';
 import { DateTime } from "luxon";
 import Select from "react-select";
 
 import {
   handleGetUserNamesApi,
   handleGetUserPreferencesApi,
-  handleGetUserProfileApi,
 } from '../Services/findFriendsService';
 import './FriendSearch.css';
 import {
@@ -24,7 +22,21 @@ import {
   handleAcceptFriendRequestByRequestId,
   handleRejectFriendRequestByRequestId,
 } from '../Services/userService';
+import { getImageUrl } from '../Services/uploadImageService';
 import Navbar from './NavBar';
+
+function Avatar({ src, name, size = 44 }) {
+  const initial = name ? name.charAt(0).toUpperCase() : '?';
+  return (
+    <div className="fs-avatar" style={{ width: size, height: size }}>
+      {src ? (
+        <img src={getImageUrl(src)} alt={name} />
+      ) : (
+        <span>{initial}</span>
+      )}
+    </div>
+  );
+}
 
 const MBTI_OPTIONS = [
   'INTJ','INTP','ENTJ','ENTP',
@@ -334,20 +346,21 @@ const FriendSearch = () => {
 
       <div className="fs-center">
         <div className="fs-card">
+          <button className="back-to-dashboard" onClick={() => navigate({ pathname: '/Dashboard', search: createSearchParams({ id }).toString() })}>Dashboard</button>
           <h1 className="fs-card-title">Find Friends</h1>
           <p className="fs-card-subtitle">Search and filter to find your perfect language partner</p>
 
-          {/* Search bar */}
-          <div className="fs-search-row">
+          {/* Search bar — Instagram-style */}
+          <div className="fs-search-wrap">
             <input
               className="fs-input"
               type="text"
-              placeholder="Search by name or email..."
+              placeholder="Search"
               value={filterInput}
               onChange={(e) => setFilterInput(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && applyFilters()}
             />
-            <button className="fs-btn-primary" onClick={applyFilters}>Search</button>
+            <button className="fs-btn-follow" onClick={applyFilters}>Search</button>
           </div>
 
           {/* Filter tabs */}
@@ -432,16 +445,14 @@ const FriendSearch = () => {
         {/* Incoming requests card */}
         {friendRequests.incoming.length > 0 && (
           <div className="fs-card">
-            <h2 className="fs-card-title" style={{ fontSize: 18 }}>Incoming Requests</h2>
+            <h2 className="fs-section-label">Requests</h2>
             <div className="fs-results-list">
               {friendRequests.incoming.map((req, i) => (
                 <div key={i} className="fs-user-row">
-                  <div className="fs-avatar">
-                    {(req.requesterFirstName || '').charAt(0).toUpperCase() || '?'}
-                  </div>
+                  <Avatar src={req.requesterProfileImage} name={req.requesterFirstName} />
                   <div className="fs-user-info">
                     <div className="fs-user-name">{req.requesterFirstName} {req.requesterLastName}</div>
-                    <div className="fs-user-meta"><span>{req.requesterEmail}</span></div>
+                    <div className="fs-user-meta">{req.requesterEmail}</div>
                   </div>
                   <div className="fs-request-actions">
                     <button
@@ -466,44 +477,33 @@ const FriendSearch = () => {
         {/* Results card */}
         <div className="fs-card">
           <div className="fs-results-header">
-            <span className="fs-results-count">{userNames.length} user{userNames.length !== 1 ? 's' : ''} found</span>
-            <button className="fs-btn-secondary" onClick={sortByCompatibility}>Sort by Compatibility</button>
+            <span className="fs-results-count">{userNames.length} suggested</span>
+            <button className="fs-btn-sort" onClick={sortByCompatibility}>Sort by match</button>
           </div>
 
           {userNames.length === 0 ? (
-            <p className="fs-empty">No users match your filters.</p>
+            <p className="fs-empty">No one matches your search.</p>
           ) : (
             <div className="fs-results-list">
               {userNames.map((user, i) => (
                 <div key={i} className="fs-user-row">
-                  <div className="fs-avatar">
-                    {user.firstName ? user.firstName.charAt(0).toUpperCase() : '?'}
-                  </div>
+                  <Avatar src={user.profileImage} name={user.firstName} />
 
                   <div className="fs-user-info">
                     <div className="fs-user-name">{user.firstName} {user.lastName}</div>
                     <div className="fs-user-meta">
                       {user.profession && <span>{user.profession}</span>}
-                      {user.age && <span>Age {user.age}</span>}
+                      {user.age && <span> · {user.age}</span>}
                       {getField(user, ["nativeLanguage", "native_language"]) && (
-                        <span>{getField(user, ["nativeLanguage", "native_language"])} → {getField(user, ["targetLanguage", "target_language"])}</span>
+                        <span> · {getField(user, ["nativeLanguage", "native_language"])} → {getField(user, ["targetLanguage", "target_language"])}</span>
                       )}
                     </div>
                   </div>
 
-                  <div className="fs-user-tags">
-                    {user.mbti && <span className="fs-tag">{user.mbti}</span>}
-                    {user.zodiac && <span className="fs-tag">{user.zodiac}</span>}
-                  </div>
-
-                  {user.score !== null && user.score !== undefined && (
-                    <span className="fs-score-pill">{user.score}</span>
-                  )}
-
                   {(() => {
                     const reqStatus = getRequestStatusForUser(user.id);
                     if (reqStatus.status === 'pending_sent') {
-                      return <span className="fs-status-badge fs-status-pending">Requested</span>;
+                      return <span className="fs-status-requested">Requested</span>;
                     }
                     if (reqStatus.status === 'pending_received' && reqStatus.requestId) {
                       const requesterName = `${user.firstName} ${user.lastName || ''}`.trim();
@@ -515,9 +515,9 @@ const FriendSearch = () => {
                       );
                     }
                     return (
-                      <button className="fs-add-btn" title="Send friend request"
+                      <button className="fs-btn-follow"
                         onClick={(e) => { e.stopPropagation(); handleSendRequest(user); }}>
-                        <FiUserPlus size={16} />
+                        Follow
                       </button>
                     );
                   })()}

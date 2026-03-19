@@ -52,6 +52,7 @@ export default (sequelize, DataTypes) => {
   }, {
     sequelize,
     modelName: 'TeamQuestProgress',
+    tableName: 'TeamQuestProgress',
   });
 
   return TeamQuestProgress;

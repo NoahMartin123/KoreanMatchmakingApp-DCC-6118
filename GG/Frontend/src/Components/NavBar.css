@@ -1,22 +1,28 @@
+.navbar,
+.navbar *,
+.navbar .nav-link,
+.navbar .dropdown-link,
+.navbar .nav-translator-btn {
+  font-family: 'Nunito', -apple-system, BlinkMacSystemFont, sans-serif !important;
+}
+
 .navbar {
   width: 100%;
-  background-color: white;
+  background: var(--dl-white);
   display: flex;
   align-items: center;
   padding: 0 24px;
-  height: 56px;
+  height: 64px;
   box-sizing: border-box;
   position: sticky;
   top: 0;
   z-index: 1000;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 0 0 var(--dl-gray-light);
   gap: 8px;
   flex-wrap: nowrap;
-  font-family: 'HK Sentiments', sans-serif;
   flex-shrink: 0;
 }
- 
-/* Nav links — overflow visible, buttons hidden via JS visibility instead */
+
 .navbar-links {
   display: flex;
   align-items: center;
@@ -26,163 +32,175 @@
   position: relative;
   overflow: hidden;
 }
- 
-/* Individual nav buttons */
+
 .navbar .nav-link {
   background: none;
   border: none;
-  color: #364659;
-  font-size: 13px;
-  font-weight: bold;
-  padding: 8px 16px;
-  border-radius: 8px;
+  color: var(--dl-dark);
+  font-size: 15px;
+  font-weight: 800;
+  padding: 10px 18px;
+  border-radius: var(--dl-radius-sm);
   cursor: pointer;
   white-space: nowrap;
-  flex-shrink: 0; /* don't shrink — just let them get clipped */
+  flex-shrink: 0;
   box-shadow: none;
-  transition: background-color 0.2s ease, color 0.2s ease;
-  font-family: 'HK Sentiments', sans-serif;
+  transition: background 0.2s, color 0.2s;
 }
- 
+
 .nav-link:hover {
-  background-color: #f3f0fa;
-  color: #6344A6;
+  background: var(--dl-gray-bg);
+  color: var(--dl-primary);
   box-shadow: none;
 }
- 
-.nav-link:active {
-  background-color: #ede9fe;
-}
- 
+
 .nav-link.active {
-  background-color: #6344a6ad;
-  color: #ffffff;
-  font-weight: bold;
+  background: var(--dl-primary);
+  color: var(--dl-white);
+  font-weight: 800;
 }
- 
-/* Right side container — translator always visible, hamburger conditionally */
+
+.nav-link {
+  position: relative;
+}
+
+.nav-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  margin-left: 6px;
+  font-size: 12px;
+  font-weight: 800;
+  color: #fff;
+  background: var(--dl-orange);
+  border-radius: 10px;
+  line-height: 1;
+}
+
+.nav-badge-dropdown {
+  margin-left: 8px;
+}
+
+.nav-badge-team {
+  background: var(--dl-primary);
+}
+
 .navbar-right {
   display: flex;
   align-items: center;
   gap: 8px;
-  flex-shrink: 0; /* never shrink — always visible */
+  flex-shrink: 0;
   padding-left: 8px;
   padding-right: 8px;
 }
- 
-/* Translator button — always shown */
+
 .navbar .nav-translator-btn {
-  background-color: #6344A6;
-  color: #ffffff;
+  background: var(--dl-blue);
+  color: var(--dl-white);
   border: none;
-  border-radius: 8px;
-  padding: 8px 16px;
-  font-size: 13px;
-  font-weight: bold;
+  border-radius: var(--dl-radius);
+  padding: 10px 20px;
+  font-size: 15px;
+  font-weight: 800;
   cursor: pointer;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  transition: box-shadow 0.2s ease;
-  font-family: 'HK Sentiments', sans-serif;
+  box-shadow: 0 4px 0 0 var(--dl-blue-dark);
+  transition: transform 0.15s, box-shadow 0.15s;
   white-space: nowrap;
   flex-shrink: 0;
 }
- 
+
 .navbar .nav-translator-btn:hover {
-  box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
   transform: translateY(-2px);
+  box-shadow: 0 6px 0 0 var(--dl-blue-dark);
 }
 
 .navbar .nav-translator-btn:active {
-  transform: translateY(0);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 0 var(--dl-blue-dark);
 }
- 
-/* Hamburger button — shown by JS when links overflow */
+
 .navbar-hamburger {
   display: flex;
   flex-direction: column;
   justify-content: center;
   gap: 5px;
-  background: #f3f0fa;
-  border: none;
+  background: var(--dl-gray-bg);
+  border: 3px solid var(--dl-gray-light);
   box-shadow: none;
   cursor: pointer;
   padding: 10px;
-  border-radius: 8px;
+  border-radius: var(--dl-radius-sm);
   flex-shrink: 0;
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
   align-items: center;
 }
- 
+
 .navbar-hamburger:hover {
-  background-color: #ede9fe;
+  background: var(--dl-gray-light);
   transform: none;
-  box-shadow: none;
 }
- 
+
 .hamburger-bar {
   display: block;
-  width: 18px;
-  height: 2px;
-  background-color: #6344A6;
+  width: 20px;
+  height: 3px;
+  background: var(--dl-dark);
   border-radius: 2px;
-  transition: transform 0.2s ease, opacity 0.2s ease;
+  transition: transform 0.2s, opacity 0.2s;
   pointer-events: none;
 }
- 
-/* Animate bars to X when open */
-.hamburger-open .hamburger-bar:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+
+.hamburger-open .hamburger-bar:nth-child(1) { transform: translateY(8px) rotate(45deg); }
 .hamburger-open .hamburger-bar:nth-child(2) { opacity: 0; }
-.hamburger-open .hamburger-bar:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
- 
-/* Hamburger wrapper — position relative so dropdown anchors to it */
+.hamburger-open .hamburger-bar:nth-child(3) { transform: translateY(-8px) rotate(-45deg); }
+
 .hamburger-wrapper {
   position: relative;
   display: flex;
   align-items: center;
 }
- 
-/* ── Dropdown menu ── */
+
 .navbar-dropdown {
   position: absolute;
-  top: calc(100% + 8px); /* 8px gap below the hamburger button */
+  top: calc(100% + 8px);
   right: 0;
-  width: 220px;
-  background-color: #ffffff;
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
-  z-index: 1100; /* above navbar */
+  width: 240px;
+  background: var(--dl-white);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+  z-index: 1100;
   display: flex;
   flex-direction: column;
   padding: 8px 0;
-  border-radius: 10px;
-  border: 1px solid #ede9fe;
+  border-radius: var(--dl-radius);
+  border: 3px solid var(--dl-gray-light);
 }
- 
-.dropdown-link {
+
+.navbar-dropdown .dropdown-link {
   background: none;
   border: none;
   box-shadow: none;
   text-align: left;
-  padding: 12px 24px;
-  font-size: 14px;
-  font-weight: bold;
-  color: #364659;
+  padding: 14px 24px;
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--dl-dark);
   cursor: pointer;
-  font-family: 'HK Sentiments', sans-serif;
-  transition: background-color 0.15s ease, color 0.15s ease;
+  transition: background 0.15s, color 0.15s;
   border-radius: 0;
   width: 100%;
 }
- 
+
 .dropdown-link:hover {
-  background-color: #f3f0fa;
-  color: #6344A6;
+  background: var(--dl-gray-bg);
+  color: var(--dl-primary);
   transform: none;
-  box-shadow: none;
 }
- 
+
 .dropdown-link-active {
-  color: #6344A6 !important;
-  background-color: #f3f0fa;
+  color: var(--dl-primary) !important;
+  background: rgba(99, 68, 166, 0.1);
 }

@@ -1,9 +1,9 @@
 .fl-page {
   min-height: 100vh;
-  background: linear-gradient(135deg, rgba(34, 193, 195, 1) 0%, rgba(253, 187, 45, 1) 100%);
+  background: var(--dl-page-bg);
   display: flex;
   flex-direction: column;
-  font-family: 'HK Sentiments', sans-serif;
+  font-family: var(--dl-font);
 }
 
 .fl-center {
@@ -15,41 +15,68 @@
 
 .fl-card {
   width: 100%;
-  max-width: 540px;
-  background: #ffffff;
-  border-radius: 12px;
-  padding: 24px;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.08);
-  border: 1px solid rgba(0,0,0,0.06);
+  max-width: 560px;
+  background: var(--dl-white);
+  border-radius: var(--dl-radius-lg);
+  padding: 28px;
+  border: 3px solid var(--dl-gray-light);
+  box-shadow: 0 4px 0 0 var(--dl-gray-light);
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 20px;
+}
+
+.fl-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 0 12px 0;
+  border-bottom: 1px solid #f0edf8;
 }
 
 .fl-title {
-  font-family: 'DM Serif Display', serif;
-  font-size: 22px;
-  font-weight: 600;
-  color: #364659;
+  font-family: var(--dl-font);
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--dl-dark);
   margin: 0;
-  text-align: center;
 }
 
-.fl-subtitle {
-  font-size: 13px;
-  color: rgba(54, 70, 89, 0.70);
-  text-align: center;
-  margin: -8px 0 0 0;
+.fl-find-btn {
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--dl-primary);
+  font-size: 16px;
+  font-weight: 800;
+  cursor: pointer;
+  padding: 6px 12px;
+  border-radius: var(--dl-radius-sm);
+  font-family: var(--dl-font);
+  transition: color 0.2s, background 0.2s;
+}
+
+.fl-find-btn:hover {
+  color: var(--dl-primary-dark);
+  background: rgba(99, 68, 166, 0.1);
+}
+
+.fl-find-btn:focus {
+  outline: none;
+  box-shadow: none;
+}
+
+.fl-section {
+  padding: 0;
 }
 
 .fl-section-title {
-  margin: 10px 0 0 0;
+  margin: 10px 0 8px 0;
   font-size: 14px;
   font-weight: 700;
   letter-spacing: 0.2px;
   color: #364659;
-  font-family: 'HK Sentiments', sans-serif;
   text-transform: uppercase;
 }
 
@@ -61,73 +88,139 @@
   overflow-y: auto;
 }
 
-.fl-friend-row {
+.fl-row {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 12px 14px;
-  background: #fbfbfb;
-  border: 1px solid rgba(0,0,0,0.06);
-  border-radius: 10px;
-  cursor: pointer;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  gap: 14px;
+  padding: 14px 18px;
+  background: var(--dl-gray-bg);
+  border: 3px solid var(--dl-gray-light);
+  border-radius: var(--dl-radius);
+  min-height: 64px;
 }
 
-.fl-friend-row:hover {
-  border-color: rgba(99, 68, 166, 0.35);
-  box-shadow: 0 2px 10px rgba(99, 68, 166, 0.12);
+.fl-row:hover {
+  border-color: var(--dl-primary);
 }
 
 .fl-avatar {
-  width: 40px;
-  height: 40px;
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
-  background: #6344A6;
+  background: var(--dl-primary);
   color: #fff;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-family: 'DM Serif Display', serif;
-  font-size: 18px;
-  font-weight: bold;
+  font-family: var(--dl-font);
+  font-size: 20px;
+  font-weight: 800;
   flex-shrink: 0;
+  overflow: hidden;
+}
+
+.fl-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.fl-info {
+  flex: 1;
+  min-width: 0;
 }
 
 .fl-name {
-  flex: 1;
   font-size: 14px;
   font-weight: 600;
   color: #364659;
 }
 
-.fl-remove-icon {
-  color: #dc2626;
-  font-size: 18px;
-  font-weight: bold;
-  flex-shrink: 0;
+/* Following button */
+.fl-btn-following {
+  background: var(--dl-white);
+  color: var(--dl-dark);
+  border: 3px solid var(--dl-gray);
+  font-size: 15px;
+  font-weight: 800;
+  padding: 8px 20px;
+  border-radius: var(--dl-radius);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.fl-btn-following:hover {
+  border-color: var(--dl-primary);
+  color: var(--dl-primary-dark);
+}
+
+.fl-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.fl-btn-accept {
+  background: var(--dl-green);
+  color: #fff;
+  border: none;
+  font-size: 14px;
+  font-weight: 800;
+  padding: 8px 18px;
+  border-radius: var(--dl-radius);
+  cursor: pointer;
+  box-shadow: 0 4px 0 0 var(--dl-green-dark);
+}
+
+.fl-btn-accept:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 0 0 var(--dl-green-dark);
+}
+
+.fl-btn-decline {
+  background: var(--dl-white);
+  color: var(--dl-dark);
+  border: 3px solid var(--dl-gray);
+  font-size: 14px;
+  font-weight: 800;
+  padding: 8px 18px;
+  border-radius: var(--dl-radius);
+  cursor: pointer;
+}
+
+.fl-btn-decline:hover {
+  border-color: var(--dl-red);
+  color: var(--dl-red);
+}
+
+.fl-pending {
+  font-size: 13px;
+  color: #888;
+  font-weight: 500;
 }
 
 .fl-empty {
   text-align: center;
-  color: rgba(54, 70, 89, 0.60);
+  color: rgba(54, 70, 89, 0.6);
   font-size: 13px;
   padding: 24px 0;
+  margin: 0;
 }
 
 .fl-back-btn {
-  background: #ffffff;
-  color: #6344A6;
-  border: 2px solid rgba(99, 68, 166, 0.55);
-  border-radius: 8px;
-  padding: 10px 24px;
-  font-size: 14px;
-  font-weight: bold;
+  background: var(--dl-white);
+  color: var(--dl-dark);
+  border: 3px solid var(--dl-gray);
+  border-radius: var(--dl-radius);
+  padding: 12px 28px;
+  font-size: 16px;
+  font-weight: 800;
   cursor: pointer;
-  font-family: 'HK Sentiments', sans-serif;
+  font-family: var(--dl-font);
   align-self: center;
-  transition: background-color 0.2s;
+  transition: all 0.15s;
 }
 
 .fl-back-btn:hover {
-  background: #f3f0fa;
+  border-color: var(--dl-primary);
+  color: var(--dl-primary-dark);
 }

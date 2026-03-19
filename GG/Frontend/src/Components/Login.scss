@@ -1,17 +1,13 @@
-// Variables for colors and styles
-$primary-gradient: linear-gradient(135deg, rgba(34, 193, 195, 1) 0%, rgba(253, 187, 45, 1) 100%);
-$error-color: #e74c3c;
-$input-border-color: #ccc;
-$dark-color: #364659;
+$error-color: #FF4B4B;
 
 .auth-page {
   min-height: 100vh;
-  background: $primary-gradient;
+  background: var(--dl-page-bg);
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 32px 16px;
-  font-family: 'HK Sentiments', sans-serif;
+  font-family: var(--dl-font);
 }
 
 .auth-logo {
@@ -24,56 +20,57 @@ $dark-color: #364659;
 
 .auth-card {
   width: 100%;
-  max-width: 420px;
-  background: rgba(255, 255, 255, 0.10);
-  border-radius: 14px;
-  padding: 28px 26px 24px;
-  box-shadow: none;
-  border: 1px solid rgba(255, 255, 255, 0.22);
-  backdrop-filter: blur(10px);
+  max-width: 440px;
+  background: var(--dl-white);
+  border-radius: var(--dl-radius-lg);
+  padding: 32px 30px 28px;
+  border: 3px solid var(--dl-gray-light);
+  box-shadow: 0 4px 0 0 var(--dl-gray-light);
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 18px;
   animation: fadeIn 0.7s ease-in-out;
 }
 
 .auth-title {
-  font-family: 'DM Serif Display', serif;
-  font-size: 26px;
-  color: #ffffff;
+  font-family: var(--dl-font);
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--dl-dark);
   text-align: center;
   margin: 0;
 }
 
 .auth-subtitle {
-  font-size: 13px;
-  color: rgba(255,255,255,0.85);
+  font-size: 16px;
+  color: var(--dl-gray-dark);
   text-align: center;
-  margin: 0 0 4px 0;
+  margin: 0 0 8px 0;
 }
 
 .login-input {
-  margin-bottom: 15px;
+  margin-bottom: 18px;
 
   label {
     display: block;
-    margin-bottom: 5px;
-    font-size: 14px;
-    color: rgba(255,255,255,0.92);
+    margin-bottom: 8px;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--dl-dark);
     font-family: inherit;
   }
 
   input {
     width: 100%;
-    padding: 10px;
-    background: rgba(255, 255, 255, 0.16);
-    border: 1px solid rgba(255,255,255,0.35);
-    border-radius: 5px;
-    font-size: 14px;
+    padding: 14px 18px;
+    background: var(--dl-gray-bg);
+    border: 3px solid var(--dl-gray-light);
+    border-radius: var(--dl-radius);
+    font-size: 16px;
     font-family: inherit;
 
     &:focus {
-      border-color: rgba(255,255,255,0.7);
+      border-color: var(--dl-primary);
       outline: none;
     }
   }
@@ -81,7 +78,7 @@ $dark-color: #364659;
   input::placeholder {
     font-family: inherit;
     font-style: normal;
-    color: rgba(255,255,255,0.65);
+    color: var(--dl-gray);
   }
 
   .password-field {
@@ -109,7 +106,7 @@ $dark-color: #364659;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    color: rgba(255,255,255,0.92);
+    color: var(--dl-dark);
     font-family: inherit;
   }
 
@@ -140,41 +137,42 @@ $dark-color: #364659;
 
 .auth-primary,
 .auth-secondary {
-  border-radius: 8px;
-  padding: 10px 20px;
-  font-size: 15px;
-  font-weight: 700;
+  border-radius: var(--dl-radius);
+  padding: 14px 24px;
+  font-size: 16px;
+  font-weight: 800;
   cursor: pointer;
-  font-family: 'HK Sentiments', sans-serif;
+  font-family: var(--dl-font);
 }
 
 .auth-primary {
-  background: rgba(255,255,255,0.92);
-  color: #6344A6;
-  border: 2px solid rgba(255,255,255,0.92);
-  box-shadow: none;
+  background: var(--dl-primary);
+  color: #fff;
+  border: none;
+  box-shadow: 0 4px 0 0 var(--dl-primary-dark);
 
   &:hover {
-    background: rgba(255,255,255,0.82);
-    box-shadow: none;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 0 0 var(--dl-primary-dark);
   }
 }
 
 .auth-secondary {
-  background: transparent;
-  color: #ffffff;
-  border: 2px solid rgba(255,255,255,0.88);
+  background: var(--dl-white);
+  color: var(--dl-dark);
+  border: 3px solid var(--dl-gray);
 
   &:hover {
-    background: rgba(255,255,255,0.10);
+    border-color: var(--dl-primary);
+    color: var(--dl-primary-dark);
   }
 }
 
 .button-header {
-  font-size: 14px;
-  font-weight: 500;
-  margin-bottom: 4px;
-  color: rgba(255,255,255,0.92);
+  font-size: 15px;
+  font-weight: 700;
+  margin-bottom: 6px;
+  color: var(--dl-dark);
 }
 
 @keyframes fadeIn {

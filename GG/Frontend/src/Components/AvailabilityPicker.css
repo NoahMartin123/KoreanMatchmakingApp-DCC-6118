@@ -17,7 +17,7 @@
   padding: 40px;
   max-width: 900px;
   width: 100%;
-  font-family: 'Arial', sans-serif;
+  font-family: var(--dl-font);
 }
 
 .page-title {

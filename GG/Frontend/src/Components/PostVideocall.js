@@ -237,7 +237,7 @@ function PostVideocall() {
         </div>
 
         <div className="buttons-container">
-          <Button className="btn-back" onClick={handleBack}>Back</Button>
+          <button className="back-to-dashboard" onClick={handleBack}>Dashboard</button>
           <Button className="btn-submit" onClick={handleSubmit}>
             Submit
           </Button>

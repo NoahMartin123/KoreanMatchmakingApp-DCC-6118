@@ -44,3 +44,23 @@ export const handleDisbandTeamApi = async (ownerId) => {
   const response = await axios.delete('/api/teams/disband', { data: { ownerId } });
   return response;
 };
+
+export const handleSendTeamInviteApi = async (inviterId, inviteeId) => {
+  const response = await axios.post('/api/teams/send-invite', { inviterId, inviteeId });
+  return response;
+};
+
+export const handleGetTeamInvitesApi = async (userId) => {
+  const response = await axios.get(`/api/teams/invites/${userId}`);
+  return response;
+};
+
+export const handleAcceptTeamInviteApi = async (inviteId, userId) => {
+  const response = await axios.post(`/api/teams/invites/${inviteId}/accept`, { userId });
+  return response;
+};
+
+export const handleDeclineTeamInviteApi = async (inviteId, userId) => {
+  const response = await axios.post(`/api/teams/invites/${inviteId}/decline`, { userId });
+  return response;
+};

@@ -1,9 +1,9 @@
 .ast-page {
   min-height: 100vh;
-  background: linear-gradient(135deg, rgba(34, 193, 195, 1) 0%, rgba(253, 187, 45, 1) 100%);
+  background: var(--dl-page-bg);
   display: flex;
   flex-direction: column;
-  font-family: 'HK Sentiments', sans-serif;
+  font-family: var(--dl-font);
 }
 
 .ast-center {
@@ -29,7 +29,7 @@
 }
 
 .ast-sidebar-title {
-  font-family: 'DM Serif Display', serif;
+  font-family: var(--dl-font);
   font-size: 16px;
   color: #364659;
   margin: 0 0 12px 0;
@@ -94,7 +94,7 @@
 }
 
 .ast-header-title {
-  font-family: 'DM Serif Display', serif;
+  font-family: var(--dl-font);
   font-size: 18px;
 }
 
@@ -160,6 +160,34 @@
   border-bottom-left-radius: 4px;
 }
 
+/* Markdown styling in message bubbles */
+.ast-msg-bubble p {
+  margin: 0 0 0.6em 0;
+}
+
+.ast-msg-bubble p:last-child {
+  margin-bottom: 0;
+}
+
+.ast-msg-bubble ul,
+.ast-msg-bubble ol {
+  margin: 0.4em 0;
+  padding-left: 1.2em;
+}
+
+.ast-msg-bubble li {
+  margin-bottom: 0.25em;
+}
+
+.ast-msg-bubble strong {
+  font-weight: 800;
+  color: #6344A6;
+}
+
+.ast-user .ast-msg-bubble strong {
+  color: rgba(255, 255, 255, 0.95);
+}
+
 /* ── Input bar ── */
 .ast-inputbar {
   display: flex;
@@ -178,7 +206,7 @@
   font-size: 13px;
   font-weight: bold;
   cursor: pointer;
-  font-family: 'HK Sentiments', sans-serif;
+  font-family: var(--dl-font);
   white-space: nowrap;
   flex-shrink: 0;
 }
@@ -193,7 +221,7 @@
   border-radius: 8px;
   padding: 10px 12px;
   font-size: 14px;
-  font-family: 'HK Sentiments', sans-serif;
+  font-family: var(--dl-font);
   color: #364659;
 }
 
@@ -212,7 +240,7 @@
   font-size: 13px;
   font-weight: bold;
   cursor: pointer;
-  font-family: 'HK Sentiments', sans-serif;
+  font-family: var(--dl-font);
   white-space: nowrap;
   flex-shrink: 0;
   transition: box-shadow 0.2s;
@@ -243,7 +271,7 @@
   font-size: 12px;
   font-weight: bold;
   cursor: pointer;
-  font-family: 'HK Sentiments', sans-serif;
+  font-family: var(--dl-font);
   transition: box-shadow 0.2s;
 }
 

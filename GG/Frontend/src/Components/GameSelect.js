@@ -5,7 +5,8 @@ import { createSearchParams, useSearchParams, useNavigate } from 'react-router-d
 import './GameSelect.css';
 import { handleGetUserStatsApi } from '../Services/gameSelectionService';
 import Navbar from './NavBar';
-import { handleGetUserQuestsApi } from '../Services/questService';
+import { handleGetUserQuestsApi, handleGetTeamQuestsApi } from '../Services/questService';
+import { handleGetMyTeamApi } from '../Services/teamService';
 import { handleGetAllBadgesWithProgressApi } from '../Services/badgeService';
 import { getImageUrl } from '../Services/uploadImageService';
 
@@ -23,6 +24,7 @@ function GameSelect() {
   const [username, setUsername] = useState('');
   const [completedChallenges, setCompletedChallenges] = useState([]);
   const [profileImage, setProfileImage] = useState(null);
+  const [profileImgError, setProfileImgError] = useState(false);
   const [quests, setQuests] = useState([]);
   const [badges, setBadges] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -35,6 +37,10 @@ function GameSelect() {
       setXp(data.xp);
       setXpToNext(data.xpToNext);
       setUsername(data.username);
+      if (data.profileImage) {
+        setProfileImage(data.profileImage);
+        setProfileImgError(false);
+      }
     } catch (err) {
       console.log(err);
       setError('Could not load user data. Please try again.');
@@ -43,8 +49,27 @@ function GameSelect() {
  
   const getQuests = async () => {
     try {
-      const data = await handleGetUserQuestsApi(id);
-      setQuests(data.quests || []);
+      const [userData, teamData] = await Promise.all([
+        handleGetUserQuestsApi(id),
+        handleGetMyTeamApi(id).catch(() => ({ team: null })),
+      ]);
+      const individualQuests = (userData.quests || []).map((q) => ({
+        ...q,
+        progress: q.userProgress ?? 0,
+        isTeamQuest: false,
+      }));
+      let teamQuests = [];
+      if (teamData?.team?.id) {
+        try {
+          const teamQuestData = await handleGetTeamQuestsApi(teamData.team.id);
+          teamQuests = (teamQuestData.quests || []).map((q) => ({
+            ...q,
+            progress: q.teamProgress ?? 0,
+            isTeamQuest: true,
+          }));
+        } catch {}
+      }
+      setQuests([...individualQuests, ...teamQuests]);
     } catch (err) {
       console.log('Could not load quests:', err);
     }
@@ -60,8 +85,9 @@ function GameSelect() {
   };
  
   useEffect(() => {
+    if (!id) return;
     Promise.all([getStats(), getQuests(), getBadges()]).finally(() => setLoading(false));
-  }, []);
+  }, [id]);
  
   const getXpPercent = () => Math.min(100, Math.round((xp / xpToNext) * 100));
   const getInitial   = () => username ? username.charAt(0).toUpperCase() : '?';
@@ -83,15 +109,17 @@ function GameSelect() {
     <div className="game-selection-page">
       <Navbar id={id} />
       <div className="gs-content">
+      <button className="back-to-dashboard gs-back" onClick={() => navigate({ pathname: '/Dashboard', search: createSearchParams({ id }).toString() })}>Dashboard</button>
 
       {/* ── Profile / Level Banner ── */}
       <div className="profile-banner">
         <div className="profile-avatar">
-          {profileImage ? (
+          {profileImage && !profileImgError ? (
             <img
               src={getImageUrl(profileImage)}
               alt="Profile"
               style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }}
+              onError={() => setProfileImgError(true)}
             />
           ) : (
             getInitial()
@@ -130,19 +158,23 @@ function GameSelect() {
         <div className="quests-panel">
           <h3 className="quests-title">Quests</h3>
  
-          {quests.length === 0 ? (
+          {quests.filter((q) => !q.completed).length === 0 ? (
             <p style={{ fontSize: 13, color: '#888', textAlign: 'center', margin: 0 }}>
-              No quests available yet.
+              {quests.length === 0 ? 'No quests available yet.' : 'All quests completed! 🎉'}
             </p>
           ) : (
             <div className="quest-list">
-              {quests.map((challenge) => {
-                const pct = Math.min(100, Math.round((challenge.userProgress / challenge.goal) * 100));
+              {quests.filter((q) => !q.completed).map((challenge) => {
+                const prog = challenge.progress ?? challenge.userProgress ?? challenge.teamProgress ?? 0;
+                const pct = Math.min(100, Math.round((prog / challenge.goal) * 100));
                 return (
                   <div key={challenge.id} className="quest-item">
                     <div className="quest-text">
-                      <div style={{ fontWeight: 'bold', marginBottom: 3 }}>{challenge.title}</div>
-                      <div style={{ fontSize: 11, color: '#888', marginBottom: 5 }}>
+                      <div style={{ fontWeight: 'bold', marginBottom: 2, fontSize: 12 }}>
+                        {challenge.title}
+                        {challenge.isTeamQuest && <span style={{ fontSize: 9, color: '#6344A6', marginLeft: 4 }}>Team</span>}
+                      </div>
+                      <div style={{ fontSize: 10, color: '#888', marginBottom: 3 }}>
                         {challenge.description}
                       </div>
                       <div className="challenge-progress-bar-track">
@@ -150,15 +182,15 @@ function GameSelect() {
                           className="challenge-progress-bar-fill"
                           style={{
                             width: `${pct}%`,
-                            background: challenge.completed ? '#16a34a' : '#6344A6',
+                            background: '#6344A6',
                           }}
                         />
                       </div>
-                      <div style={{ fontSize: 11, color: '#999', textAlign: 'right', marginTop: 2 }}>
-                        {challenge.userProgress}/{challenge.goal}
+                      <div style={{ fontSize: 10, color: '#999', textAlign: 'right', marginTop: 1 }}>
+                        {prog}/{challenge.goal}
                       </div>
                     </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
                       {challenge.completed ? (
                         <div className="quest-done-check">✓</div>
                       ) : (
@@ -169,7 +201,7 @@ function GameSelect() {
                           readOnly
                         />
                       )}
-                      <span style={{ fontSize: 10, color: '#6344A6', fontWeight: 'bold' }}>
+                      <span style={{ fontSize: 9, color: '#6344A6', fontWeight: 'bold' }}>
                         +{challenge.xpReward}XP
                       </span>
                     </div>

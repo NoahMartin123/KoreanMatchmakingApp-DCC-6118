@@ -62,6 +62,7 @@ export default (sequelize, DataTypes) => {
   }, {
     sequelize,
     modelName: 'Quest',
+    tableName: 'Quest',
   });
 
   return Quest;

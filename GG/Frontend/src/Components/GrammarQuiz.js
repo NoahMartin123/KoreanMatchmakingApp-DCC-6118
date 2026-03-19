@@ -48,6 +48,11 @@ function GrammarQuiz() {
     setAnswers(newAnswers);
   };
 
+  const isCorrect = (q, answerIdx) => {
+    if (answerIdx === null || q?.correctIndex === undefined) return null;
+    return answerIdx === q.correctIndex;
+  };
+
   const handleSubmit = async () => {
     if (result || submitting) return;
     setSubmitting(true);
@@ -103,16 +108,31 @@ function GrammarQuiz() {
             </div>
             <p className="gq-question-text">{q.question}</p>
             <div className="gq-options">
-              {q.options.map((opt, idx) => (
-                <button
-                  key={idx}
-                  className={`gq-option ${answers[currentQ] === idx ? 'gq-selected' : ''}`}
-                  onClick={() => selectAnswer(idx)}
-                >
-                  {opt}
-                </button>
-              ))}
+              {q.options.map((opt, idx) => {
+                const selected = answers[currentQ] === idx;
+                const correct = isCorrect(q, answers[currentQ]);
+                const showAsCorrect = correct === false && q.correctIndex === idx;
+                return (
+                  <button
+                    key={idx}
+                    className={`gq-option ${selected ? 'gq-selected' : ''} ${
+                      selected && correct === true ? 'gq-correct' : ''
+                    } ${selected && correct === false ? 'gq-wrong' : ''} ${
+                      showAsCorrect ? 'gq-show-correct' : ''
+                    }`}
+                    onClick={() => selectAnswer(idx)}
+                  >
+                    {opt}
+                  </button>
+                );
+              })}
             </div>
+            {answers[currentQ] !== null && isCorrect(q, answers[currentQ]) === false && q.explanation && (
+              <div className="gq-instant-feedback">
+                <p className="gq-feedback-label">Correct answer: {q.options[q.correctIndex]}</p>
+                <p className="gq-feedback-explanation">{q.explanation}</p>
+              </div>
+            )}
             <div className="gq-nav">
               <button
                 className="gq-nav-btn"

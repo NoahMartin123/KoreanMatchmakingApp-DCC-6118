@@ -550,12 +550,12 @@ let getTrueFriendsList = async (req, res) => {
 
     const [rows] = await pool.query(
       `
-      SELECT u.id, u.firstName, u.lastName, u.email
+      SELECT u.id, u.firstName, u.lastName, u.email, u.profileImage
       FROM FriendsModel f
       JOIN UserAccount u ON u.id = f.user2_ID
       WHERE f.user1_ID = ? AND f.status = 'accepted'
       UNION
-      SELECT u.id, u.firstName, u.lastName, u.email
+      SELECT u.id, u.firstName, u.lastName, u.email, u.profileImage
       FROM FriendsModel f
       JOIN UserAccount u ON u.id = f.user1_ID
       WHERE f.user2_ID = ? AND f.status = 'accepted'
@@ -582,7 +582,7 @@ let getFriendRequests = async (req, res) => {
     const [incoming] = await pool.query(
       `
       SELECT fr.id, fr.requesterId, fr.recipientId, fr.status, fr.createdAt, fr.updatedAt,
-             ua.id as requesterUserId, ua.firstName as requesterFirstName, ua.lastName as requesterLastName, ua.email as requesterEmail
+             ua.id as requesterUserId, ua.firstName as requesterFirstName, ua.lastName as requesterLastName, ua.email as requesterEmail, ua.profileImage as requesterProfileImage
       FROM FriendRequest fr
       JOIN UserAccount ua ON ua.id = fr.requesterId
       WHERE fr.recipientId = ? AND fr.status = 'pending'
@@ -594,7 +594,7 @@ let getFriendRequests = async (req, res) => {
     const [outgoing] = await pool.query(
       `
       SELECT fr.id, fr.requesterId, fr.recipientId, fr.status, fr.createdAt, fr.updatedAt,
-             ua.id as recipientUserId, ua.firstName as recipientFirstName, ua.lastName as recipientLastName, ua.email as recipientEmail
+             ua.id as recipientUserId, ua.firstName as recipientFirstName, ua.lastName as recipientLastName, ua.email as recipientEmail, ua.profileImage as recipientProfileImage
       FROM FriendRequest fr
       JOIN UserAccount ua ON ua.id = fr.recipientId
       WHERE fr.requesterId = ? AND fr.status = 'pending'

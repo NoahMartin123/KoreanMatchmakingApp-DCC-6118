@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import AgoraRTC from 'agora-rtc-sdk-ng';
 import { VideoPlayer } from './VideoPlayer';
-import Button from 'react-bootstrap/Button';
 import { useNavigate, createSearchParams, useSearchParams } from 'react-router-dom';
 import './VideoRoom.css';
 import { uploadRecording as uploadRecordingService } from '../Services/uploadService.js';
@@ -409,39 +408,44 @@ export default function VideoRoom({ room, initialAiAllowed = true, chatId, curre
     <div className="vr-root">
       <div className="vr-topbar">
         <div className="vr-left">
-          <Button className="vr-btn" variant="primary" size="sm" onClick={goHome} disabled={isUploading}>
-            {isUploading ? 'Uploading...' : 'Home'}
-          </Button>
-          <Button className="vr-btn" variant="danger" size="sm" onClick={endCall} disabled={isUploading}>
-            {isUploading ? 'Uploading...' : 'End Call'}
-          </Button>
+          <span className="vr-meeting-info">Meeting</span>
+          <button className="vr-btn vr-btn-home" onClick={goHome} disabled={isUploading}>
+            {isUploading ? 'Uploading...' : '←'}
+          </button>
         </div>
         <div className="vr-center">
-          <Button className="vr-btn" variant="primary" onClick={toggleMute}>
-            {muted ? 'Unmute' : 'Mute'}
-          </Button>
-          <Button className="vr-btn" variant="primary" onClick={toggleHideVideo}>
-            {hidden ? 'Show Video' : 'Hide Video'}
-          </Button>
-          <Button 
-            className="vr-btn" 
-            variant={isRecording ? "danger" : "secondary"} 
+          <button className="vr-btn" onClick={toggleMute} disabled={isUploading} title={muted ? 'Unmute' : 'Mute'}>
+            {muted ? '🔇' : '🎤'} {muted ? 'Unmute' : 'Mute'}
+          </button>
+          <button className="vr-btn" onClick={toggleHideVideo} disabled={isUploading} title={hidden ? 'Start video' : 'Stop video'}>
+            {hidden ? '📷' : '📹'} {hidden ? 'Start video' : 'Stop video'}
+          </button>
+          <button
+            className="vr-btn vr-btn-record"
             onClick={isRecording ? stopRecording : startRecording}
             disabled={isUploading}
+            title={isRecording ? 'Stop recording' : 'Record'}
           >
-            {isUploading ? '⏳ Uploading...' : isRecording ? '⏹ Stop Recording' : '⏺ Record'}
-          </Button>
+            {isUploading ? '⏳' : isRecording ? '⏹' : '⏺'} {isUploading ? 'Uploading...' : isRecording ? 'Stop' : 'Record'}
+          </button>
         </div>
         <div className="vr-right">
-          <Button className="vr-btn" size="sm" variant={aiAllowed ? 'success' : 'secondary'} onClick={toggleAiAccess}>
-            {aiAllowed ? 'AI: On' : 'AI: Off'}
-          </Button>
+          <button
+            className={`vr-btn ${aiAllowed ? 'vr-btn-ai-on' : 'vr-btn-ai-off'}`}
+            onClick={toggleAiAccess}
+            title="AI access"
+          >
+            {aiAllowed ? 'AI On' : 'AI Off'}
+          </button>
+          <button className="vr-btn vr-btn-end" onClick={endCall} disabled={isUploading}>
+            {isUploading ? 'Uploading...' : 'Leave call'}
+          </button>
         </div>
       </div>
 
       <div className="vr-content">
         <div className="videos">
-          {users.length === 0 && <div>No users yet (waiting for join...)</div>}
+          {users.length === 0 && <div className="vr-placeholder">Waiting for others to join...</div>}
           {users.map(user => (
             <VideoPlayer key={user.uid} user={user} />
           ))}

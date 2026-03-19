@@ -1,10 +1,10 @@
-/* Page shell matching other gradient screens */
+/* Google Meet–style Call page */
 .vc-page {
   min-height: 100vh;
-  background: linear-gradient(135deg, rgba(34, 193, 195, 1) 0%, rgba(253, 187, 45, 1) 100%);
+  background: #202124;
   display: flex;
   flex-direction: column;
-  font-family: 'HK Sentiments', sans-serif;
+  font-family: var(--dl-font);
 }
 
 .vc-center {
@@ -12,106 +12,100 @@
   flex: 1;
   align-items: center;
   justify-content: center;
-  padding: 30px 20px 60px;
+  padding: 24px;
 }
 
 .video-call-container {
   width: 100%;
-  max-width: 760px;
-  display: flex;
-  justify-content: center;
+  max-width: 480px;
 }
 
-/* Card layout for a clean, intuitive join flow */
+/* Join card - Meet-style */
 .join-card {
-  width: 100%;
-  max-width: 560px;
-  background: #ffffff;
+  background: #fff;
   border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-  border: 1px solid #ede9fe;
-  padding: 24px;
+  padding: 32px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.25);
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 24px;
 }
 
-/* Headings */
 .join-title {
   margin: 0;
-  text-align: center;
-  font-size: 24px;
+  font-size: 22px;
   font-weight: 700;
-  color: #364659;
+  color: #202124;
+  text-align: center;
 }
 
 .join-subtitle {
-  margin: -8px 0 0 0;
+  margin: 0;
+  font-size: 14px;
+  color: #5f6368;
   text-align: center;
-  color: #888;
-  font-size: 13px;
+  line-height: 1.5;
 }
 
-/* Form */
 .join-form {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: 8px;
 }
 
 .join-label {
+  font-size: 13px;
   font-weight: 600;
-  color: #364659;
+  color: #5f6368;
+}
+
+.join-form .form-control,
+.join-form input {
+  padding: 12px 16px;
+  border: 1px solid #dadce0;
+  border-radius: 8px;
+  font-size: 15px;
+  font-family: var(--dl-font);
+  background: #fff;
+}
+
+.join-form .form-control:focus,
+.join-form input:focus {
+  border-color: var(--dl-primary);
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(99, 68, 166, 0.2);
 }
 
 .join-error {
-  color: #dc3545;
   font-size: 13px;
+  color: #d93025;
 }
 
-/* Actions: evenly spaced, consistent sizing */
 .join-actions {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+  display: flex;
   gap: 12px;
-  margin-top: 6px;
+  margin-top: 8px;
 }
 
-.btn-cta,
-.btn-ghost {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  height: 42px;
-  border-radius: 12px;
-  font-weight: 700;
-  font-size: 15px;
-  border: none;
-  transition: transform 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
-  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.10);
-}
-
-/* Primary action */
-.btn-cta {
-  background: #6344A6;
+.join-actions .btn-cta {
+  flex: 1;
+  padding: 12px 24px;
+  background: var(--dl-primary);
   color: #fff;
-}
-.btn-cta:hover {
-  background: #4f3480;
-}
-
-/* Secondary action */
-.btn-ghost {
-  background: #ffffff;
-  color: #6344A6;
-  border: 1px solid #d4d4d8;
-}
-.btn-ghost:hover {
-  background: #f3f0fa;
+  border: none;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: var(--dl-font);
+  transition: background 0.2s;
 }
 
-/* Responsive stacking */
-@media (max-width: 560px) {
-  .join-actions {
-    grid-template-columns: 1fr;
-  }
+.join-actions .btn-cta:hover {
+  background: var(--dl-primary-dark);
+}
+
+.join-actions .back-to-dashboard {
+  flex: 0;
+  min-width: auto;
 }

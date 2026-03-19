@@ -288,9 +288,7 @@ function ChallengeHub() {
         </div>
 
         <div className="ch-back-wrap">
-          <button className="ch-back-dashboard" onClick={handleBackToDashboard}>
-            Back to Dashboard
-          </button>
+          <button className="back-to-dashboard" onClick={handleBackToDashboard}>Dashboard</button>
         </div>
       </div>
       </div>

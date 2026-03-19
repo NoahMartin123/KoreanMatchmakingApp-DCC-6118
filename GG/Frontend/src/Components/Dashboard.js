@@ -8,7 +8,6 @@ import Navbar from './NavBar';
 
 const CARDS = [
   { label: 'Edit Profile',    path: '/UpdateProfile' },
-  { label: 'Find Friends',    path: '/FriendSearch' },
   { label: 'Friends List',    path: '/FriendsList' },
   { label: 'Call',            path: '/Videocall' },
   { label: 'Translator',      path: '/Translator' },

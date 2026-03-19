@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import ImageUpload from './ImageUpload';
+import './ProfileImageSection.css';
 import {
   handleUploadProfileImageApi,
   handleRemoveProfileImageApi,
@@ -30,15 +31,17 @@ function ProfileImageSection({ id, currentImage, onImageChange }) {
   };
 
   return (
-    <ImageUpload
-      currentImage={imageUrl}
-      onUpload={handleUpload}
-      onRemove={handleRemove}
-      placeholder="?"
-      shape="circle"
-      size={90}
-      label="Profile Picture"
-    />
+    <div className="profile-image-section">
+      <ImageUpload
+        currentImage={imageUrl}
+        onUpload={handleUpload}
+        onRemove={handleRemove}
+        placeholder="?"
+        shape="circle"
+        size={140}
+        label=""
+      />
+    </div>
   );
 }
 

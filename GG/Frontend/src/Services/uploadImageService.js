@@ -69,9 +69,13 @@ export const handleRemoveTeamImageApi = async (userId) => {
   return response.json();
 };
 
-// Helper — builds full image URL from stored path
+// Helper — builds image URL from stored path
+// In dev with proxy, use relative path so requests go through proxy (same-origin).
+// Otherwise use full backend URL.
 export const getImageUrl = (imagePath) => {
   if (!imagePath) return null;
   if (imagePath.startsWith('http')) return imagePath;
-  return `${BASE_URL}${imagePath}`;
+  // Use relative path in dev so proxy forwards to backend (avoids CORS/cross-origin issues)
+  if (imagePath.startsWith('/')) return imagePath;
+  return `${BASE_URL}/${imagePath}`;
 };

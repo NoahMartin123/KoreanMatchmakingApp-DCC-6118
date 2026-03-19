@@ -17,7 +17,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background:linear-gradient(135deg, rgba(34,193,195,1) 0%,     rgba(253,187,45,1) 100%);
+  background: var(--dl-page-bg);
   border-radius: 5px;
   padding: 4px;
   color: white;

@@ -5,6 +5,9 @@ import {
   handleJoinTeamApi,
   handleGetMyTeamApi,
   handleSearchTeamsApi,
+  handleGetTeamInvitesApi,
+  handleAcceptTeamInviteApi,
+  handleDeclineTeamInviteApi,
 } from '../Services/teamService';
 import './Team.css';
  
@@ -23,22 +26,27 @@ function TeamLobby() {
   const [searching, setSearching]       = useState(false);
   const [errMsg, setErrMsg]             = useState('');
   const [loading, setLoading]           = useState(true);
+  const [invites, setInvites]           = useState([]);
+  const [inviteAction, setInviteAction] = useState(null);
  
-  // Redirect to TeamPage if already in a team
+  // Redirect to TeamPage if already in a team; otherwise fetch invites
   useEffect(() => {
     const checkTeam = async () => {
       try {
         const data = await handleGetMyTeamApi(id);
         if (data.team) {
           navigate({ pathname: '/TeamPage', search: createSearchParams({ id }).toString() });
+          return;
         }
+        const invRes = await handleGetTeamInvitesApi(id);
+        setInvites(invRes?.invites || []);
       } catch (e) {
         console.log(e);
       } finally {
         setLoading(false);
       }
     };
-    checkTeam();
+    if (id) checkTeam();
   }, [id]);
  
   const handleJoinByCode = async () => {
@@ -87,6 +95,30 @@ function TeamLobby() {
       search: createSearchParams({ id }).toString(),
     });
   };
+
+  const handleAcceptInvite = async (invite) => {
+    setInviteAction(invite.id);
+    try {
+      await handleAcceptTeamInviteApi(invite.id, id);
+      navigate({ pathname: '/TeamPage', search: createSearchParams({ id }).toString() });
+    } catch (err) {
+      setErrMsg(err?.response?.data?.error || 'Failed to join team.');
+    } finally {
+      setInviteAction(null);
+    }
+  };
+
+  const handleDeclineInvite = async (invite) => {
+    setInviteAction(invite.id);
+    try {
+      await handleDeclineTeamInviteApi(invite.id, id);
+      setInvites((prev) => prev.filter((i) => i.id !== invite.id));
+    } catch (err) {
+      setErrMsg(err?.response?.data?.error || 'Failed to decline.');
+    } finally {
+      setInviteAction(null);
+    }
+  };
  
   if (loading) return <div className="team-loading">Loading...</div>;
  
@@ -94,6 +126,44 @@ function TeamLobby() {
     <div className="team-page-bg">
       <Navbar id={id} />
       <div className="team-center">
+        {invites.length > 0 && (
+          <div className="team-card team-invites-card">
+            <h2 className="team-invites-title">📬 Team Invites</h2>
+            <p className="team-invites-desc">You've been invited to join these teams:</p>
+            {invites.map((inv) => {
+              const team = inv.Team || inv.team;
+              const inviter = inv.inviter;
+              const inviterName = inviter ? `${inviter.firstName || ''} ${inviter.lastName || ''}`.trim() : 'Someone';
+              const teamName = team?.name || 'a team';
+              const loadingInv = inviteAction === inv.id;
+              return (
+                <div key={inv.id} className="team-invite-row-card">
+                  <span className="team-invite-row-logo">{team?.logo || '👥'}</span>
+                  <div className="team-invite-row-info">
+                    <strong>{inviterName}</strong> invited you to join <strong>{teamName}</strong>
+                  </div>
+                  <div className="team-invite-row-actions">
+                    <button
+                      className="team-btn-primary"
+                      disabled={loadingInv}
+                      onClick={() => handleAcceptInvite(inv)}
+                    >
+                      {loadingInv ? '...' : 'Accept'}
+                    </button>
+                    <button
+                      className="team-btn-secondary team-btn-decline"
+                      disabled={loadingInv}
+                      onClick={() => handleDeclineInvite(inv)}
+                    >
+                      Decline
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
         <div className="team-card">
           <div className="team-card-logo">👥</div>
           <h1 className="team-card-title">Teams</h1>
@@ -188,9 +258,7 @@ function TeamLobby() {
           )}
 
           <div className="team-btn-row" style={{ marginTop: 14 }}>
-            <button className="team-btn-secondary" onClick={goToDashboard}>
-              Back to Dashboard
-            </button>
+            <button className="back-to-dashboard" onClick={goToDashboard}>Dashboard</button>
           </div>
         </div>
       </div>

@@ -53,6 +53,14 @@ function TermMatching() {
     setActivePairId(null);
   };
 
+  const getPairFeedback = (pairId) => {
+    const chosen = selected[pairId];
+    if (!chosen) return null;
+    const pair = pairs.find(p => p.id === pairId);
+    if (!pair?.english) return null;
+    return pair.english === chosen ? 'correct' : 'wrong';
+  };
+
   const handleSubmit = async () => {
     if (result || submitting) return;
     setSubmitting(true);
@@ -107,36 +115,58 @@ function TermMatching() {
         )}
 
         {!result && (
-          <div className="tm-board">
-            <div className="tm-column">
-              <h4 className="tm-col-label">Korean</h4>
-              {pairs.map(p => (
-                <button
-                  key={p.id}
-                  className={`tm-card tm-korean ${activePairId === p.id ? 'tm-active' : ''} ${selected[p.id] ? 'tm-matched' : ''}`}
-                  onClick={() => handleKoreanClick(p.id)}
-                >
-                  {p.korean}
-                </button>
-              ))}
+          <>
+            <div className="tm-board">
+              <div className="tm-column">
+                <h4 className="tm-col-label">Korean</h4>
+                {pairs.map(p => {
+                  const feedback = getPairFeedback(p.id);
+                  return (
+                    <button
+                      key={p.id}
+                      className={`tm-card tm-korean ${activePairId === p.id ? 'tm-active' : ''} ${selected[p.id] ? 'tm-matched' : ''} ${
+                        feedback === 'correct' ? 'tm-match-correct' : ''
+                      } ${feedback === 'wrong' ? 'tm-match-wrong' : ''}`}
+                      onClick={() => handleKoreanClick(p.id)}
+                    >
+                      {p.korean}
+                    </button>
+                  );
+                })}
+              </div>
+              <div className="tm-column">
+                <h4 className="tm-col-label">English</h4>
+                {englishOptions.map(o => {
+                  const isUsed = Object.values(selected).includes(o.english);
+                  const pairUsingThis = pairs.find(p => selected[p.id] === o.english);
+                  const feedback = pairUsingThis ? getPairFeedback(pairUsingThis.id) : null;
+                  return (
+                    <button
+                      key={o.id}
+                      className={`tm-card tm-english ${isUsed ? 'tm-used' : ''} ${
+                        feedback === 'correct' ? 'tm-match-correct' : ''
+                      } ${feedback === 'wrong' ? 'tm-match-wrong' : ''}`}
+                      onClick={() => handleEnglishClick(o)}
+                      disabled={isUsed}
+                    >
+                      {o.english}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-            <div className="tm-column">
-              <h4 className="tm-col-label">English</h4>
-              {englishOptions.map(o => {
-                const isUsed = Object.values(selected).includes(o.english);
-                return (
-                  <button
-                    key={o.id}
-                    className={`tm-card tm-english ${isUsed ? 'tm-used' : ''}`}
-                    onClick={() => handleEnglishClick(o)}
-                    disabled={isUsed}
-                  >
-                    {o.english}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
+            {pairs.some(p => getPairFeedback(p.id) === 'wrong') && (
+              <div className="tm-instant-feedback">
+                <p className="tm-feedback-msg">Incorrect matches (red). Correct answers:</p>
+                <ul className="tm-feedback-list">
+                  {pairs.filter(p => getPairFeedback(p.id) === 'wrong').map(p => (
+                    <li key={p.id}><strong>{p.korean}</strong> = {p.english}</li>
+                  ))}
+                </ul>
+                <p className="tm-feedback-hint">Use Reset to try again.</p>
+              </div>
+            )}
+          </>
         )}
 
         {!result && (

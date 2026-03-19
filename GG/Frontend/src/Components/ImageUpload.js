@@ -12,7 +12,8 @@
 //   size          — pixel size of the preview (default 80)
 //   label         — label shown above the upload area
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import { getImageUrl } from '../Services/uploadImageService';
 import './ImageUpload.css';
 
 function ImageUpload({
@@ -25,6 +26,12 @@ function ImageUpload({
   label         = 'Upload Image',
 }) {
   const [preview, setPreview]   = useState(currentImage);
+  const [imgError, setImgError] = useState(false);
+
+  useEffect(() => {
+    setPreview(currentImage);
+    setImgError(false);
+  }, [currentImage]);
   const [loading, setLoading]   = useState(false);
   const [errMsg, setErrMsg]     = useState('');
   const fileInputRef            = useRef(null);
@@ -75,19 +82,19 @@ function ImageUpload({
       {label && <span className="image-upload-label">{label}</span>}
 
       <div className="image-upload-preview-row">
-        {/* Preview circle/square */}
+        {/* Preview with hover overlay for Change/Remove */}
         <div
           className="image-upload-preview"
           style={{ width: size, height: size, borderRadius, flexShrink: 0 }}
-          onClick={() => !loading && fileInputRef.current.click()}
         >
-          {preview ? (
+          {preview && !imgError ? (
             <img
               src={preview.startsWith('blob:') || preview.startsWith('http')
                 ? preview
-                : `${process.env.REACT_APP_BACKEND_URL}${preview}`}
+                : getImageUrl(preview)}
               alt="Preview"
               style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius }}
+              onError={() => setImgError(true)}
             />
           ) : (
             <span className="image-upload-placeholder">{placeholder}</span>
@@ -95,30 +102,23 @@ function ImageUpload({
           {loading && <div className="image-upload-spinner" />}
           {!loading && (
             <div className="image-upload-overlay">
-              {/* Avoid emoji; keep UI clean */}
+              <button
+                type="button"
+                className="image-upload-overlay-btn image-upload-overlay-change"
+                onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}
+              >
+                {preview ? 'Change' : 'Upload'}
+              </button>
+              {preview && onRemove && (
+                <button
+                  type="button"
+                  className="image-upload-overlay-btn image-upload-overlay-remove"
+                  onClick={(e) => { e.stopPropagation(); handleRemove(); }}
+                >
+                  Remove
+                </button>
+              )}
             </div>
-          )}
-        </div>
-
-        {/* Buttons */}
-        <div className="image-upload-actions">
-          <button
-            type="button"
-            className="image-upload-btn-choose"
-            onClick={() => fileInputRef.current.click()}
-            disabled={loading}
-          >
-            {preview ? 'Change' : 'Upload'}
-          </button>
-          {preview && onRemove && (
-            <button
-              type="button"
-              className="image-upload-btn-remove"
-              onClick={handleRemove}
-              disabled={loading}
-            >
-              Remove
-            </button>
           )}
         </div>
       </div>

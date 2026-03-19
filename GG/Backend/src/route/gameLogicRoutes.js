@@ -89,6 +89,66 @@ async function incrementQuests(userId, gameType) {
   }
 }
 
+async function incrementTeamQuests(userId, gameType) {
+  try {
+    if (!db.Quest || !db.TeamQuestProgress || !db.TeamMember) return [];
+    const membership = await db.TeamMember.findOne({ where: { userId } });
+    if (!membership) return [];
+
+    const teamId = membership.teamId;
+    const { Op } = await import('sequelize');
+    const quests = await db.Quest.findAll({
+      where: {
+        isActive: true,
+        type: 'team',
+        gameType: { [Op.or]: [gameType, null] },
+      },
+    });
+
+    const updated = [];
+    for (const quest of quests) {
+      let [progress] = await db.TeamQuestProgress.findOrCreate({
+        where: { teamId, questId: quest.id },
+        defaults: { progress: 0, completed: false, lastResetAt: new Date() },
+      });
+
+      if (progress.completed && quest.resetType === 'permanent') continue;
+
+      const shouldReset = (p, resetType) => {
+        if (resetType === 'permanent' || !p.lastResetAt) return false;
+        const now = new Date();
+        const last = new Date(p.lastResetAt);
+        if (resetType === 'daily') return now.toDateString() !== last.toDateString();
+        if (resetType === 'weekly') return (now - last) >= 7 * 24 * 60 * 60 * 1000;
+        return false;
+      };
+      if (shouldReset(progress, quest.resetType)) {
+        await progress.update({ progress: 0, completed: false, lastResetAt: new Date() });
+      }
+
+      const newProgress = progress.progress + 1;
+      const nowComplete = newProgress >= quest.goal;
+
+      await progress.update({
+        progress: newProgress,
+        completed: nowComplete,
+        completedAt: nowComplete && !progress.completed ? new Date() : progress.completedAt,
+      });
+
+      if (nowComplete && !progress.completed) {
+        await db.Team.increment('totalXP', { by: quest.xpReward, where: { id: teamId } });
+      }
+
+      updated.push({ questId: quest.id, progress: newProgress, completed: nowComplete });
+    }
+
+    return updated;
+  } catch (err) {
+    console.warn('incrementTeamQuests failed (non-fatal):', err.message);
+    return [];
+  }
+}
+
 async function resolveChallengeForSession(userId, gameType, explicitChallengeId = null) {
   if (!db.Challenge) return null;
   const { Op } = db.Sequelize;
@@ -224,7 +284,7 @@ router.post('/term-matching/start', async (req, res) => {
     storeSession(userId, 'term-matching', { pairs: round.pairs, difficulty, challengeId: resolvedChallengeId });
 
     return res.status(200).json({
-      pairs: round.pairs.map(p => ({ id: p.id, korean: p.korean })),
+      pairs: round.pairs.map(p => ({ id: p.id, korean: p.korean, english: p.english })),
       englishOptions: round.shuffledEnglish,
       challengeId: resolvedChallengeId,
     });
@@ -251,7 +311,10 @@ router.post('/term-matching/submit', async (req, res) => {
     if (result.score === 100) await incrementGameStat(userId, 'perfect_score');
 
     const xpResult = await awardXp(userId, xpEarned);
-    const questUpdates = await incrementQuests(userId, 'term-matching');
+    const [questUpdates, teamQuestUpdates] = await Promise.all([
+      incrementQuests(userId, 'term-matching'),
+      incrementTeamQuests(userId, 'term-matching'),
+    ]);
     const newBadges = await checkAndAwardBadges(userId);
 
     await saveGameSession(userId, 'term-matching', session.difficulty, { ...result, xpEarned }, session.challengeId);
@@ -305,7 +368,10 @@ router.post('/grammar-quiz/submit', async (req, res) => {
     if (result.score === 100) await incrementGameStat(userId, 'perfect_score');
 
     const xpResult = await awardXp(userId, xpEarned);
-    const questUpdates = await incrementQuests(userId, 'grammar-quiz');
+    const [questUpdates, teamQuestUpdates] = await Promise.all([
+      incrementQuests(userId, 'grammar-quiz'),
+      incrementTeamQuests(userId, 'grammar-quiz'),
+    ]);
     const newBadges = await checkAndAwardBadges(userId);
 
     await saveGameSession(userId, 'grammar-quiz', session.difficulty, { ...result, xpEarned }, session.challengeId);
@@ -360,7 +426,10 @@ router.post('/pronunciation-drill/submit', async (req, res) => {
     if (score === 100) await incrementGameStat(userId, 'perfect_score');
 
     const xpResult = await awardXp(userId, xpEarned);
-    const questUpdates = await incrementQuests(userId, 'pronunciation-drill');
+    const [questUpdates, teamQuestUpdates] = await Promise.all([
+      incrementQuests(userId, 'pronunciation-drill'),
+      incrementTeamQuests(userId, 'pronunciation-drill'),
+    ]);
     const newBadges = await checkAndAwardBadges(userId);
 
     await saveGameSession(userId, 'pronunciation-drill', session.difficulty, { score, correct: completed, total, xpEarned }, session.challengeId);

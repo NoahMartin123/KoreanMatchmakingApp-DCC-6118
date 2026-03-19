@@ -161,8 +161,8 @@ function CreateProfile() {
   const pickSingle = (options, value) => options.find(o => o.value === value) || null;
 
   const selectStyles = {
-    control: (base) => ({ ...base, borderRadius: 6, borderColor: '#d4d4d8', fontSize: 14, fontFamily: "'HK Sentiments', sans-serif" }),
-    option: (base) => ({ ...base, fontSize: 14, fontFamily: "'HK Sentiments', sans-serif" }),
+    control: (base) => ({ ...base, borderRadius: 6, borderColor: '#d4d4d8', fontSize: 14, fontFamily: "var(--dl-font)" }),
+    option: (base) => ({ ...base, fontSize: 14, fontFamily: "var(--dl-font)" }),
     menu: (base) => ({ ...base, zIndex: 10 }),
   };
 

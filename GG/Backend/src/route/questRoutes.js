@@ -150,7 +150,7 @@ router.get('/user/:userId', async (req, res) => {
 
     return res.status(200).json({ quests: results });
   } catch (err) {
-    console.error('Error fetching user quests:', err);
+    console.error('Error fetching user quests:', err?.message || err);
     return res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -229,7 +229,17 @@ router.post('/user/increment', async (req, res) => {
 // Returns all active team quests with this team's progress
 router.get('/team/:teamId', async (req, res) => {
   try {
-    const { teamId } = req.params;
+    const teamId = Number(req.params.teamId);
+    if (!teamId || isNaN(teamId)) {
+      return res.status(400).json({ error: 'Invalid team ID' });
+    }
+
+    // Verify team exists before creating progress records (avoids FK constraint error)
+    const team = await db.Team.findByPk(teamId);
+    if (!team) {
+      return res.status(404).json({ error: 'Team not found' });
+    }
+
     const quests = await db.Quest.findAll({
       where: { isActive: true, type: 'team' },
     });
@@ -263,7 +273,7 @@ router.get('/team/:teamId', async (req, res) => {
 
     return res.status(200).json({ quests: results });
   } catch (err) {
-    console.error('Error fetching team quests:', err);
+    console.error('Error fetching team quests:', err?.message || err);
     return res.status(500).json({ error: 'Internal server error' });
   }
 });

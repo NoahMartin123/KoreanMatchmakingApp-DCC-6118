@@ -136,7 +136,7 @@ function TranscriptView() {
                         )}
                     </div>
 
-                    <button className="tv-back-btn" onClick={handleBack}>Back to Dashboard</button>
+                    <button className="back-to-dashboard" onClick={handleBack}>Dashboard</button>
                 </div>
             </div>
         </div>

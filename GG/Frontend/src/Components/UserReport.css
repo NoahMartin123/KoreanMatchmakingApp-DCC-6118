@@ -1,9 +1,9 @@
 .ur-page {
   min-height: 100vh;
-  background: linear-gradient(135deg, rgba(34, 193, 195, 1) 0%, rgba(253, 187, 45, 1) 100%);
+  background: var(--dl-page-bg);
   display: flex;
   flex-direction: column;
-  font-family: 'HK Sentiments', sans-serif;
+  font-family: var(--dl-font);
 }
 
 .ur-center {
@@ -28,7 +28,7 @@
 }
 
 .ur-title {
-  font-family: 'DM Serif Display', serif;
+  font-family: var(--dl-font);
   font-size: 24px;
   color: #364659;
   margin: 0;
@@ -89,7 +89,7 @@
   font-size: 14px;
   font-weight: bold;
   cursor: pointer;
-  font-family: 'HK Sentiments', sans-serif;
+  font-family: var(--dl-font);
   transition: box-shadow 0.2s;
 }
 
@@ -106,7 +106,7 @@
   font-size: 14px;
   font-weight: bold;
   cursor: pointer;
-  font-family: 'HK Sentiments', sans-serif;
+  font-family: var(--dl-font);
   transition: background-color 0.2s;
 }
 
