@@ -1,177 +1,113 @@
 import { useState } from 'react';
 import React from "react";
-import './Registration.css'; 
-
-import Button from 'react-bootstrap/Button';
-import { handleRegisterApi } from '../Services/userService';
+import './Login.scss';
+import { handleLoginApi, handleRegisterApi } from '../Services/userService';
+import logo from "../Styles/logo.png";
 import { createSearchParams, useNavigate } from "react-router-dom";
-
+ 
 function Registration() {
-  // States for registration
   let data;
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const navigate = useNavigate();
-
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errMsg, setErrMsg] = useState('');
-
-  // States for checking the errors
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState(false);
-
-  // Handling the name change
-  const handleFirstName = (e) => {
-    setFirstName(e.target.value);
-    setSubmitted(false);
-  };
-  const handleLastName = (e) => {
-    setLastName(e.target.value);
-    setSubmitted(false);
-  };
-
-  // Handling the email change
-  const handleEmail = (e) => {
-    setEmail(e.target.value);
-    setSubmitted(false);
-  };
-
-  // Handling the password change
-  const handlePassword = (e) => {
-    setPassword(e.target.value);
-    setSubmitted(false);
-  };
-
-  const handleBack = () => {
-    navigate({
-      pathname: "/login", // Navigate to Registration page
-    });
-  };
-
-  // Handling the form submission
-  const handleSubmit = async(e) => {
-    console.log(data)
+ 
+  const handleFirstName = (e) => { setFirstName(e.target.value); setSubmitted(false); };
+  const handleLastName  = (e) => { setLastName(e.target.value);  setSubmitted(false); };
+  const handleEmail     = (e) => { setEmail(e.target.value);     setSubmitted(false); };
+  const handlePassword  = (e) => { setPassword(e.target.value);  setSubmitted(false); };
+ 
+  const handleBack = () => { navigate({ pathname: "/Login" }); };
+ 
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (firstName === '' || lastName === '' || email === '' || password === '') {
       setError(true);
-      setErrMsg("enter all the fields");
-    } else {
-      setError(false);
-      //navigate("/CreateProfile");  
-      setErrMsg("");
-      try {
-        console.log('Sending Register: ' + firstName + lastName+ email+ password);
-        let data = await handleRegisterApi(firstName, lastName, email, password);
-        console.log("fj");
-        if (data && data.errCode !== 0) {
-          setSubmitted(true);
-          setError(true);
-          setErrMsg(data.message);
-        }
-        if (data && data.errorCode === 0) {
-          console.log("here");
-          // todo when login successfull!
-          navigate({
-            pathname: "/CreateProfile",
-            search: createSearchParams({
-              id: data.id
-            }).toString()
-          });
-        }
-      } catch(error) {
-        if (error.response) {
-          if (error.response.data) {
-            setErrMsg(error.response.data.message)
-            console.log(errMsg)
-          }
-        }
+      setErrMsg("Enter all the fields");
+      return;
+    }
+    setError(false);
+    setErrMsg("");
+    try {
+      console.log('Sending Register:', firstName, lastName, email, password);
+      const registerResp = await handleRegisterApi(firstName, lastName, email, password);
+      console.log('Register response:', registerResp);
+
+      if (registerResp && registerResp.errorCode !== 0) {
+        setSubmitted(true);
+        setError(true);
+        setErrMsg(registerResp.message || 'Registration failed.');
+        return;
+      }
+
+      // Auto-login after successful registration.
+      const loginResp = await handleLoginApi(email, password);
+      if (loginResp && loginResp.errorCode === 0) {
+        navigate({
+          // Go directly to initial profile creation using the logged-in user's id.
+          pathname: "/CreateProfile",
+          search: createSearchParams({ id: loginResp.id }).toString(),
+        });
+      } else {
+        navigate({
+          pathname: "/CreateProfile",
+          search: createSearchParams({ id: registerResp.id }).toString(),
+        });
+      }
+    } catch (error) {
+      if (error.response && error.response.data) {
+        setErrMsg(error.response.data.message);
       }
     }
   };
-
-  // Showing error message if error is true
-  const errorMessage = () => {
-    return (
-      <div
-        className="error"
-        style={{
-          display: error ? '' : 'none',
-        }}>
-        <h1>{errMsg}</h1>
-      </div>
-    );
-  };
-
+ 
+  const errorMessage = () => (
+    <div className="error" style={{ display: error ? '' : 'none' }}>
+      <h1>{errMsg}</h1>
+    </div>
+  );
+ 
   return (
-    <div className="login-background">
-      <div className="visual-section">
-        {/* Add optional branding or visuals here */}
-        Welcome Back!
-      </div>
-      <div className="login-container">
-        <div className="login-content">
-          <div classname="text-login"><h1>Registration</h1></div>
-          <div>
-            {errorMessage()}
+    <div className="auth-page">
+      <div className="auth-card">
+        <img src={logo} alt="Language Exchange Matchmaker logo" className="auth-logo" />
+        <h1 className="auth-title">Create Account</h1>
+        <p className="auth-subtitle">Sign up to start games, quests, and practice sessions.</p>
+
+        <div>{errorMessage()}</div>
+
+        <form onSubmit={handleSubmit}>
+          <div className="login-input">
+            <label className="button-header">First Name</label>
+            <input placeholder="Enter first name" onChange={handleFirstName} value={firstName} type="text" />
           </div>
-          <form>
-            <div className="login-content">
-              {/* Labels and inputs for form data */}
+          <div className="login-input">
+            <label className="button-header">Last Name</label>
+            <input placeholder="Enter last name"  onChange={handleLastName}  value={lastName}  type="text" />
+          </div>
+          <div className="login-input">
+            <label className="button-header">Email</label>
+            <input placeholder="Enter email"     onChange={handleEmail}     value={email}     type="text" />
+          </div>
+          <div className="login-input">
+            <label className="button-header">Password</label>
+            <input placeholder="Enter password"  onChange={handlePassword}  value={password}  type="password" />
+          </div>
 
-              <div>  {/*/First Name Input */}
-                <label className="button-header">First Name:</label>
-                <input 
-                  placeholder="Enter First Name.." 
-                  onChange={handleFirstName}
-                  value={firstName} type="text" />
-              </div>
-
-              <div>
-                <label className="button-header">Last Name:</label>
-                <input 
-                  placeholder="Enter Last Name.." 
-                  onChange={handleLastName}
-                  value={lastName} type="text"/>
-              </div>
-
-              <div>
-                <label className="button-header">Email:</label>
-                <input
-                  placeholder="Enter Email.." 
-                  onChange={handleEmail}
-                  value={email} type="text"/>
-              </div>
-
-              <div>
-                <label className="button-header">Password:</label>
-                <input
-                  placeholder="Enter Password.." 
-                  onChange={handlePassword}
-                  value={password} type="text"/>
-              </div>
-
-              <button className="btn-login" onClick={handleSubmit}>
-                Create Profile
-              </button>
-              <div
-                className="login"
-                style={{
-                  color: "black",
-                  cursor: "pointer",
-                  fontWeight: "normal",
-                  transition: "color 0.3s ease",
-                }}
-                onClick={handleBack}
-                onMouseEnter={(e) => (e.target.style.color = "#6344A6")}
-                onMouseLeave={(e) => (e.target.style.color = "black")}
-              >Already have an account? Login!
-              </div>
-            </div>
-          </form>
-        </div>
+          <div className="auth-actions">
+            <button className="auth-primary" type="submit">Create Profile</button>
+            <button className="auth-secondary" type="button" onClick={handleBack}>
+              Already have an account? Log in
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );
 }
+ 
 export default Registration;

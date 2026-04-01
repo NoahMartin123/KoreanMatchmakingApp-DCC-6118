@@ -1,90 +1,157 @@
-// Import Google Fonts
-@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=HK+Sentiments&display=swap');
+// Import Google Fonts - Duolingo-style: Nunito (friendly, rounded)
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=DM+Serif+Display&family=HK+Sentiments&display=swap');
+
+// Design tokens (purple primary - original app color)
+:root {
+  --dl-primary: #6344A6;
+  --dl-primary-dark: #5236a0;
+  --dl-primary-light: #7c5cbf;
+  --dl-green: #58CC02;
+  --dl-green-dark: #46A302;
+  --dl-blue: #1CB0F6;
+  --dl-blue-dark: #1899D6;
+  --dl-orange: #FF9600;
+  --dl-red: #FF4B4B;
+  --dl-red-dark: #E63939;
+  --dl-white: #FFFFFF;
+  --dl-gray-bg: #F7F7F7;
+  --dl-gray-light: #E5E5E5;
+  --dl-gray: #AAAAAA;
+  --dl-gray-dark: #777777;
+  --dl-dark: #3C3C3C;
+  --dl-radius: 16px;
+  --dl-radius-sm: 12px;
+  --dl-radius-lg: 24px;
+  --dl-radius-xl: 28px;
+  --dl-shadow: 0 4px 0 0 rgba(0,0,0,0.1);
+  --dl-shadow-hover: 0 6px 0 0 rgba(0,0,0,0.12);
+  --dl-font: 'Nunito', 'HK Sentiments', -apple-system, sans-serif;
+  --dl-page-bg: linear-gradient(135deg, rgba(34, 193, 195, 1) 0%, rgba(253, 187, 45, 1) 100%);
+}
 
 // Reset and Base Styles
-
-$dark-color: #364659;
+$dark-color: #3C3C3C;
 
 body {
   margin: 0;
-  font-family: 'HK Sentiments', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  font-family: var(--dl-font);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  color: $dark-color; // General text color
+  color: $dark-color;
 }
 
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
 }
 
-// Header Styles
 h1, h2, h3, h4, h5, h6 {
-  font-family: 'DM Serif Display', serif;
+  font-family: var(--dl-font);
   margin: 0;
-  color: $dark-color; // Adjust header color if needed
+  font-weight: 800;
+  color: $dark-color;
 }
 
-// General Text Styling
 p, span, form, label, input, button {
-  font-family: 'HK Sentiments', sans-serif;
+  font-family: var(--dl-font);
 }
 
 button {
-  background-color: #6344A6; // Solid color
+  background-color: var(--dl-primary);
   width: auto;
-  padding: 12px 20px; // Default padding for usability
-  font-size: 16px; // Modern text size
-  font-weight: bold;
-  border-radius: 8px; // Subtle rounding
+  padding: 14px 24px;
+  font-size: 16px;
+  font-weight: 800;
+  border-radius: var(--dl-radius);
   border: none;
-  color: white; // Text color for good contrast
+  color: white;
   cursor: pointer;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); // Depth with a soft shadow
-  transition: transform 0.2s ease, box-shadow 0.2s ease; // Smooth interactivity
+  box-shadow: var(--dl-shadow);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
 
   &:hover {
-    background-color: darken(#6344A6, 10%); // Slightly darker color on hover
-    box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15); // Stronger shadow
-    transform: translateY(-2px); // Subtle "lift"
+    background-color: var(--dl-primary-dark);
+    box-shadow: var(--dl-shadow-hover);
+    transform: translateY(-2px);
   }
 
   &:focus {
     outline: none;
-    box-shadow: 0 0 0 3px rgba(99, 68, 166, 0.3); // Accessible focus ring
+    box-shadow: 0 0 0 4px rgba(99, 68, 166, 0.35);
   }
 
   &:active {
-    background-color: lighten(#6344A6, 10%); // Slightly lighter when pressed
-    transform: translateY(0); // Reset lift
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); // Subtle pressed shadow
+    transform: translateY(2px);
+    box-shadow: 0 2px 0 0 rgba(0,0,0,0.15);
   }
 }
 
 input[type="text"],
 input[type="password"] {
-  width: 100%; // Full width within the parent container
-  padding: 12px 15px; // Comfortable padding
-  font-size: 14px; // Modern and legible text size
-  border: 1px solid #ccc; // Subtle border for structure
-  border-radius: 6px; // Slightly rounded corners for a modern feel
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05); // Subtle shadow for depth
-  transition: border-color 0.2s ease, box-shadow 0.2s ease; // Smooth transitions for interactivity
+  width: 100%;
+  padding: 14px 18px;
+  font-size: 16px;
+  border: 3px solid var(--dl-gray-light);
+  border-radius: var(--dl-radius-sm);
+  box-sizing: border-box;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
 
   &:focus {
-    border-color: #6344A6; // Accent color on focus
-    box-shadow: 0 4px 6px rgba(99, 68, 166, 0.2); // Highlighted shadow
-    outline: none; // Remove default outline
-  }
-
-  &:hover {
-    border-color: darken(#ccc, 10%); // Slightly darker border on hover
+    border-color: var(--dl-primary);
+    box-shadow: 0 0 0 4px rgba(99, 68, 166, 0.2);
+    outline: none;
   }
 
   &::placeholder {
-    color: #aaa; // Subtle placeholder color
-    font-style: italic; // Optional styling for placeholder text
+    color: var(--dl-gray);
   }
+}
+
+/* Shared page background - use on main page wrappers for consistency */
+.dl-page {
+  min-height: 100vh;
+  background: var(--dl-page-bg);
+  font-family: var(--dl-font);
+}
+
+/* Shared card style - white cards on gradient pages */
+.dl-card {
+  background: var(--dl-white);
+  border-radius: var(--dl-radius-lg);
+  border: 3px solid var(--dl-gray-light);
+  box-shadow: 0 4px 0 0 var(--dl-gray-light);
+  padding: 24px;
+  box-sizing: border-box;
+}
+
+/* Simple back-to-dashboard link - small, subtle */
+.back-to-dashboard {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--dl-gray-dark);
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-family: var(--dl-font);
+  text-decoration: none;
+  transition: color 0.2s, background 0.2s;
+  box-shadow: none;
+}
+
+.back-to-dashboard:hover {
+  color: var(--dl-primary);
+  background: rgba(99, 68, 166, 0.08);
+  transform: none;
+  box-shadow: none;
+}
+
+.back-to-dashboard::before {
+  content: '←';
+  font-size: 16px;
 }
 
 

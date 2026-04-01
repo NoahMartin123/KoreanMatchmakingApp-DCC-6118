@@ -1,251 +1,122 @@
 import { useState, useEffect } from 'react';
-import React from "react"; 
+import React from "react";
 import './Dashboard.css';
-import profile from "../Styles/profilepic.jpg";
 import { createSearchParams, useSearchParams, useNavigate } from "react-router-dom";
 import { handleUserDashBoardApi } from '../Services/dashboardService';
-import { handleFindFriendsApi, handleCreateFriendsApi } from '../Services/findFriendsService';
-import { handleGetProfile, handleGetUser, handleMatch } from '../Services/userService';
+import { getUserChallenges } from '../Services/challengeService';
 import { setUserData } from '../Utils/userData';
+import Navbar from './NavBar';
 
-function Dashboard()  {
+const CARDS = [
+  { label: 'Edit Profile',    path: '/UpdateProfile' },
+  { label: 'Friends List',    path: '/FriendsList' },
+  { label: 'Find Friends',    path: '/FriendSearch' },
+  { label: 'Call',            path: '/Videocall' },
+  { label: 'Translator',      path: '/Translator' },
+  { label: 'User Report',     path: '/UserReport' },
+  { label: 'Scheduler',       path: '/Scheduler' },
+  { label: 'Chat Assistant',  path: '/Assistant' },
+  { label: 'Transcripts',     path: '/TranscriptView' },
+  { label: 'Games',           path: '/GameSelection' },
+  { label: 'Challenges',      path: '/Challenges' },
+  { label: 'Teams',           path: '/TeamLobby' },
+];
+
+function Dashboard() {
   const [search] = useSearchParams();
   const id = search.get("id");
-  const [FName, setFName] = useState();
-  const [LName, setLName] = useState();
-  const [email, setEmail] = useState();
-  const [age, setAge] = useState();
-  const [gender, setGender] = useState();
-  const [hobby, setHobby] = useState();
-  const [profession, setProfession] = useState();
-  const [friendids, setfriendids] = useState([]);
-  const [name, setName] = useState([]);
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [pendingChallenges, setPendingChallenges] = useState(0);
+  const [yourTurnChallenges, setYourTurnChallenges] = useState(0);
   const navigate = useNavigate();
-  
-  let names = []; 
-  let array = [];
-  let videoCalls = [];
-  let data;
-
-  const getInfo = async () => {
-    try {
-      data = await handleUserDashBoardApi(id);
-      setFName(data.user.firstName);
-      setLName(data.user.lastName);
-      setEmail(data.user.email);
-      setAge(data.user.age);
-      setGender(data.user.gender);
-      setHobby(data.user.hobby);
-      setProfession(data.user.profession);
-
-      // Store data for access in other components
-      setUserData({
-        firstName: data.user.firstName,
-        lastName: data.user.lastName,
-        email: data.user.email,
-        age: data.user.age,
-        gender: data.user.gender,
-        hobby: data.user.hobby,
-        profession: data.user.profession,
-      });
-
-      let lists = await handleFindFriendsApi(id);
-      setfriendids(lists.chatsData);
-
-      for(let i = 0; i < friendids.length; i++) {
-        let friend = await handleUserDashBoardApi(friendids[i].user2_ID);
-        let friendName = friend.user.firstName + ' ' + friend.user.lastName;
-        names.push(friendName);
-      }
-      setName(names);
-    } catch (error) {
-      console.log(error);
-    }
-  };
-
-  const setup = () => {
-    for(let i = 0; i < friendids.length; i++) {
-      console.log('name-i ' + name[i].name);
-      console.log('logged in ' + name[i].loggedIn);
-      if (name[i].loggedIn) {
-        array.push(
-          <div className='leftOnline'>
-            <img src={profile} alt="DP" className="leftpic" />
-            <text className='text'>{name[i]}</text>
-          </div>
-        );
-      } else {
-        array.push(
-          <div className='leftOffline'>
-            <img src={profile} alt="DP" className="leftpic" />
-            <text className='text'>{name[i]}</text>
-          </div>
-        );
-      }
-    }
-  };
 
   useEffect(() => {
-    getInfo();
-  }, []);
-
-  const Logout = async (e) => {
-    navigate({
-      pathname: "/LogoutConfirmation",
-      search: createSearchParams({
-          id: id
-      }).toString()
-    });
-  };
-
-  const Translator = async (e) => {
-    navigate({
-      pathname: "/Translator",
-      search: createSearchParams({
-          id: id
-      }).toString()
-    });
-  };
-
-  const call = async (e) => {
-    navigate({
-      pathname: "/Videocall",
-      search: createSearchParams({
-          id: id
-      }).toString()
-    });
-  };
-
-  const handleChat = async (e) => {
-    navigate({
-      pathname: "/Chat",
-      search: createSearchParams({
-          senderid: id
-      }).toString()
-    });
-  };
-
-  const goToUserReport = () => {
-    navigate({
-      pathname: "/UserReport", 
-      search: createSearchParams({
-        id: id, 
-      }).toString(),
-    });
-  };
-
-  const friendSearch = () => {
-    navigate({
-      pathname: "/FriendSearch",
-      search: createSearchParams({
-        id: id,
-      }).toString(),
-    });
-  };
-
-  const createVideoCall = () => {
-    var channelId = Math.floor(10000 + Math.random() * 90000);
-    for (let vc in videoCalls) {
-      if (vc.user !== id) {
-        videoCalls.push({
-          user: id,
-          channel: channelId
+    const load = async () => {
+      try {
+        const data = await handleUserDashBoardApi(id);
+        setFirstName(data.user.firstName);
+        setLastName(data.user.lastName);
+        setUserData({
+          firstName: data.user.firstName,
+          lastName: data.user.lastName,
+          email: data.user.email,
         });
+      } catch (err) {
+        console.log(err);
       }
-    }
-    call();
-  };
+    };
+    load();
+  }, [id]);
 
-  const addFriend1 = async (e) => {
-    try {
-      console.log('friend add attempt');
-      let data = await handleCreateFriendsApi(id, friendids[0].id);
-    } catch(err) {
-      console.log(err);
-    }
-  };
+  useEffect(() => {
+    if (!id) return;
+    const fetchChallenges = async () => {
+      try {
+        const res = await getUserChallenges(id);
+        const list = res?.challenges || res?.data?.challenges || [];
+        if (!Array.isArray(list)) return;
+        const pending = list.filter((c) => c.status === 'pending' && Number(c.challengedId) === Number(id)).length;
+        const yourTurn = list.filter((c) => {
+          if (!['accepted', 'in_progress'].includes(c.status)) return false;
+          if (Number(c.challengerId) === Number(id)) return c.challengerScore === null;
+          if (Number(c.challengedId) === Number(id)) return c.challengedScore === null;
+          return false;
+        }).length;
+        setPendingChallenges(pending);
+        setYourTurnChallenges(yourTurn);
+      } catch {
+        setPendingChallenges(0);
+        setYourTurnChallenges(0);
+      }
+    };
+    fetchChallenges();
+    const interval = setInterval(fetchChallenges, 15000);
+    return () => clearInterval(interval);
+  }, [id]);
 
-  const handleHelp = async (e) => {
-    navigate({
-      pathname: "/HelpPage",
-      search: createSearchParams({
-          id: id
-      }).toString()
-    });
+  const goTo = (path) => {
+    navigate({ pathname: path, search: createSearchParams({ id }).toString() });
   };
-
-  for(let i = 0; i < friendids.length; i++) {
-    array.push(
-      <div className='left'>
-        <img src={profile} alt="DP" className="leftpic" />
-        <text className='text'>{name[i]}</text>
-        <button onClick={createVideoCall}>📞</button>
-      </div>
-    );
-  }
 
   return (
-    <div className="dashboard-container">
+    <div className="dashboard-page">
+      <Navbar id={id} />
 
-      <div className="dashboard-left">
-        <h1>Dashboard</h1>
-        <img src={profile} alt="logo" className="center" />
-        <h1>{FName} {LName}</h1>
-        <h2>{email}</h2>
-        <div classname="dashboard-left-buttons">
-          <button className="btn-questions" onClick={handleHelp}>?</button>
-          <button className="btn-logout" onClick={Logout}>Logout</button>
+      {pendingChallenges > 0 && (
+        <div className="dash-challenge-banner dash-challenge-banner-pending">
+          <span>You have {pendingChallenges} pending challenge{pendingChallenges !== 1 ? 's' : ''} waiting for your response.</span>
+          <button className="dash-challenge-banner-btn" onClick={() => goTo('/Challenges')}>View Challenges</button>
         </div>
+      )}
+      {yourTurnChallenges > 0 && pendingChallenges === 0 && (
+        <div className="dash-challenge-banner dash-challenge-banner-turn">
+          <span>It&apos;s your turn to play in {yourTurnChallenges} challenge{yourTurnChallenges !== 1 ? 's' : ''}!</span>
+          <button className="dash-challenge-banner-btn" onClick={() => goTo('/Challenges')}>Play Now</button>
+        </div>
+      )}
+
+      <div className="dashboard-welcome">
+        <h1>Welcome, {firstName} {lastName}</h1>
+        <p>What would you like to do today?</p>
       </div>
 
-      <div className="dashboard-right">
-      <button className="btn-action" onClick={() => navigate({
-                pathname: "/UpdateProfile",
-                search: createSearchParams({ id: id }).toString()
-              })}>
-              Set Profile
-          </button>
-        <button className="btn-action" onClick={friendSearch}>Find Friend</button>
-          <button className="btn-action" onClick={() => navigate({
-                pathname: "/FriendsList",
-                search: createSearchParams({ id: id }).toString()
-              })}>
-              Friends List
-          </button>
-          <button className="btn-action" onClick={call}>Call</button>
-          <button className="btn-action" onClick={Translator}>Translator</button>
-          <button className="btn-action" onClick={goToUserReport}>User Report</button>
-          <button className="btn-action" onClick={() => navigate({
-                pathname: "/Scheduler",
-                search: createSearchParams({ id: id }).toString()
-              })}>
-              Scheduler
-          </button>
-          <button
-            className="btn-action"
-            onClick={() =>
-              navigate({
-                pathname: "/Assistant",
-                search: createSearchParams({ id }).toString()
-              })
-            }
-          >
-            Chat Assistant
-          </button>
-          <button
-            className="btn-action"
-            onClick={() =>
-              navigate({
-                pathname: "/TranscriptView",
-                search: createSearchParams({ id }).toString()
-              })
-            }
-          >
-              Transcripts
-          </button>
-
+      <div className="dashboard-grid">
+        {CARDS.map((card) => (
+          <div key={card.path} className="dash-card" onClick={() => goTo(card.path)}>
+            <span className="dash-card-label">{card.label}</span>
+          </div>
+        ))}
       </div>
 
+      <div className="dashboard-footer">
+        <button
+          className="dash-logout-btn"
+          onClick={() => goTo('/LogoutConfirmation')}
+        >
+          Log Out
+        </button>
+      </div>
     </div>
   );
 }

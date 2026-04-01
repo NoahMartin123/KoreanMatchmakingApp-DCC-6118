@@ -127,6 +127,16 @@ To remove your root/local instance password:
 
 To create the correct schema, simply select "Create a new schema in the selected server" within your root/local instance and name it "languageexchangematchmaker"
 
+# Chat Assistant (AI)
+The Chat Assistant uses Google's Gemini API. To enable it:
+
+1. Get a free API key at https://aistudio.google.com/apikey
+2. Copy `GG/Backend/.env.example` to `GG/Backend/.env`
+3. Set `GEMINI_API_KEY=your_key_here` in `.env`
+4. Restart the backend server
+
+Without a valid `GEMINI_API_KEY`, the Chat Assistant will return "Sorry! There was a backend error."
+
 # Agora Video Call
 To generate a token, visit https://console.agora.io, click configure the app, and generate a new temp token. This token is only valid for 24 hours.
 

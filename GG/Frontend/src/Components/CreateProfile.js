@@ -3,13 +3,12 @@ import React from "react";
 import './Registration.css'; 
 import './UpdateProfile.css';  // ← Use UpdateProfile.css for white box
 import Select from "react-select";
+import ProfileImageSection from './ProfileImageSection';
 
 import {
   handleProfileCreationAPI,
   handleGetAllInterests,
-  handleGetUserInterests,
   handleReplaceUserInterests,
-  handleGetUserAvailability,
   handleReplaceUserAvailability
 } from '../Services/userService';
 
@@ -17,6 +16,7 @@ import { createSearchParams, useNavigate, useSearchParams } from "react-router-d
 
 function CreateProfile() {
   // Profile fields
+  const [profileImage, setProfileImage] = useState(null);
   const [nativeLanguage, setNativeLanguage] = useState('');
   const [targetLanguage, setTargetLanguage] = useState('');
   const [targetLanguageProficiency, setTargetLanguageProficiency] = useState('');
@@ -39,6 +39,8 @@ function CreateProfile() {
   const [errMsg, setErrMsg] = useState('');
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState(false);
+  const [step, setStep] = useState(0);
+  const [showOptional, setShowOptional] = useState(false);
 
   const [search] = useSearchParams();
   const id = search.get("id");
@@ -158,6 +160,12 @@ function CreateProfile() {
 
   const pickSingle = (options, value) => options.find(o => o.value === value) || null;
 
+  const selectStyles = {
+    control: (base) => ({ ...base, borderRadius: 6, borderColor: '#d4d4d8', fontSize: 14, fontFamily: "var(--dl-font)" }),
+    option: (base) => ({ ...base, fontSize: 14, fontFamily: "var(--dl-font)" }),
+    menu: (base) => ({ ...base, zIndex: 10 }),
+  };
+
   // Fetch all interests
   useEffect(() => {
     const fetchInterests = async () => {
@@ -190,8 +198,35 @@ function CreateProfile() {
   const handleAvailability = (selectedOptions) => setAvailability(selectedOptions || []);
   const handleVisibility = (selectedOption) => setVisibility(selectedOption?.value ?? '');
 
+  const STEPS = [
+    { title: 'Basics', subtitle: 'Languages + your current level' },
+    { title: 'About you', subtitle: 'A couple quick details' },
+    { title: 'Schedule', subtitle: 'Timezone + availability' },
+    { title: 'Optional', subtitle: 'Extras that help matching' },
+  ];
+
+  const stepRequiredFields = {
+    0: [nativeLanguage, targetLanguage, targetLanguageProficiency],
+    1: [age, profession],
+  };
+
+  const handleNext = () => {
+    const required = stepRequiredFields[step];
+    if (required && required.some(v => !v)) {
+      setError(true);
+      return;
+    }
+    setError(false);
+    setStep(s => Math.min(s + 1, STEPS.length - 1));
+  };
+
+  const handlePrev = () => {
+    setError(false);
+    setStep(s => Math.max(s - 1, 0));
+  };
+
   const handleSubmit = async (e) => {
-    e.preventDefault();
+    if (e?.preventDefault) e.preventDefault();
     setErrMsg('');
 
     if (
@@ -251,166 +286,154 @@ function CreateProfile() {
     });
   };
 
-  const successMessage = () => (
-    <div
-      className="success"
-      style={{ display: submitted ? '' : 'none' }}
-    >
-      <h1>Created</h1>
-    </div>
-  );
-
-  const errorMessage = () => (
-    <div
-      className="error"
-      style={{ display: error ? '' : 'none' }}
-    >
-      <h1>enter required fields</h1>
-    </div>
-  );
-
   return (
-    <div className="set-profile-wrapper">
-      <div className="set-profile-card">
-        <h1>Set Profile</h1>
-        <h6>(* indicates required fields)</h6>
+    <div className="up-page">
+      <div className="up-center">
+        <div className="up-card">
+          <div className="up-header">
+            <div>
+              <h1 className="up-title">Set Profile</h1>
+              <p className="up-subtitle">Quick quiz—answer a few questions to get started.</p>
+            </div>
+            <div className="up-progress">
+              <div className="up-progress-top">
+                <span className="up-progress-step">{STEPS[step].title}</span>
+                <span className="up-progress-pct">{Math.round(((step + 1) / STEPS.length) * 100)}%</span>
+              </div>
+              <div className="up-progress-track">
+                <div className="up-progress-fill" style={{ width: `${Math.round(((step + 1) / STEPS.length) * 100)}%` }} />
+              </div>
+              <div className="up-progress-sub">{STEPS[step].subtitle}</div>
+            </div>
+          </div>
 
-        <div className="messages">
-          {errorMessage()}
-          {successMessage()}
-          {errMsg ? <div className="error"><h1>{errMsg}</h1></div> : null}
+          <div className="up-messages">
+            {error && <div className="up-error">Please enter all required fields.</div>}
+            {submitted && !errMsg && <div className="up-success">Profile created successfully!</div>}
+            {errMsg && <div className="up-error">{errMsg}</div>}
+          </div>
+
+          <form className="up-form" onSubmit={(e) => e.preventDefault()}>
+            {step === 0 && (
+              <div className="up-step">
+                <div className="up-group">
+                  <ProfileImageSection
+                    id={id}
+                    currentImage={profileImage}
+                    onImageChange={(path) => setProfileImage(path)}
+                  />
+                </div>
+
+                <div className="up-step-grid">
+                  <div className="up-group">
+                    <label className="up-label">Native Language *</label>
+                    <Select styles={selectStyles} options={NativeLanguage} onChange={handleNativeLanguage} value={pickSingle(NativeLanguage, nativeLanguage)} />
+                  </div>
+                  <div className="up-group">
+                    <label className="up-label">Target Language *</label>
+                    <Select styles={selectStyles} options={TargetLanguage} onChange={handleTargetLanguage} value={pickSingle(TargetLanguage, targetLanguage)} />
+                  </div>
+                  <div className="up-group">
+                    <label className="up-label">Proficiency Level *</label>
+                    <Select styles={selectStyles} options={TargetLanguageProficiency} onChange={handleTargetLanguageProficiency} value={pickSingle(TargetLanguageProficiency, targetLanguageProficiency)} />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {step === 1 && (
+              <div className="up-step">
+                <div className="up-step-grid">
+                  <div className="up-group">
+                    <label className="up-label">Age *</label>
+                    <input placeholder="Enter age" onChange={handleAge} className="up-input" type="text" value={age} />
+                  </div>
+                  <div className="up-group">
+                    <label className="up-label">Profession *</label>
+                    <Select styles={selectStyles} options={Profession} onChange={handleProfession} value={pickSingle(Profession, profession)} />
+                  </div>
+                </div>
+
+                <button className="up-accordion" type="button" onClick={() => setShowOptional(v => !v)}>
+                  {showOptional ? 'Hide optional details' : 'Add optional details'}
+                </button>
+
+                {showOptional && (
+                  <div className="up-step-grid">
+                    <div className="up-group">
+                      <label className="up-label">Gender</label>
+                      <Select styles={selectStyles} options={Gender} onChange={handleGender} value={pickSingle(Gender, gender)} />
+                    </div>
+                    <div className="up-group">
+                      <label className="up-label">Personality Type (MBTI)</label>
+                      <Select styles={selectStyles} options={MBTI} onChange={handleMBTI} value={pickSingle(MBTI, mbti)} />
+                    </div>
+                    <div className="up-group">
+                      <label className="up-label">Zodiac</label>
+                      <Select styles={selectStyles} options={Zodiac} onChange={handleZodiac} value={pickSingle(Zodiac, zodiac)} />
+                    </div>
+                    <div className="up-group" style={{ gridColumn: '1 / -1' }}>
+                      <label className="up-label">Interests</label>
+                      <Select styles={selectStyles} isMulti options={allInterests} onChange={handleInterestsChange} value={selectedInterests} />
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {step === 2 && (
+              <div className="up-step">
+                <div className="up-step-grid">
+                  <div className="up-group">
+                    <label className="up-label">Time Zone</label>
+                    <Select styles={selectStyles} options={TimeZones} onChange={handleDefaultTimeZone} value={pickSingle(TimeZones, defaultTimeZone)} />
+                  </div>
+                  <div className="up-group">
+                    <label className="up-label">Visibility</label>
+                    <Select styles={selectStyles} options={VisibilityOptions} onChange={handleVisibility} value={pickSingle(VisibilityOptions, visibility)} />
+                  </div>
+                  <div className="up-group" style={{ gridColumn: '1 / -1' }}>
+                    <label className="up-label">Availability</label>
+                    <Select styles={selectStyles} isMulti options={availabilityOptions} value={availability} onChange={handleAvailability} placeholder="Pick a few times you're usually free..." />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {step === 3 && (
+              <div className="up-step">
+                <div className="up-step-grid">
+                  <div className="up-group" style={{ gridColumn: '1 / -1' }}>
+                    <label className="up-label">You’re all set</label>
+                    <div className="up-hint">
+                      You can always edit your profile later. Ready to start matching and playing games?
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="up-wizard-footer">
+              <button
+                className="up-btn-secondary"
+                type="button"
+                onClick={step === 0 ? handleBack : handlePrev}
+              >
+                {step === 0 ? 'Back' : 'Back'}
+              </button>
+
+              {step < STEPS.length - 1 ? (
+                <button className="up-btn-primary" type="button" onClick={handleNext}>
+                  Continue
+                </button>
+              ) : (
+                <button className="up-btn-primary" type="button" onClick={handleSubmit}>
+                  Create Profile
+                </button>
+              )}
+            </div>
+          </form>
         </div>
-
-        <form className="set-profile-form">
-          <div className='form-group'>
-            <label className="label">Native Language*</label>
-            <Select
-              options={NativeLanguage}
-              onChange={handleNativeLanguage}
-              value={pickSingle(NativeLanguage, nativeLanguage)}
-            />
-          </div>
-
-          <div className='form-group'>
-            <label className="label">Target Language*</label>
-            <Select
-              options={TargetLanguage}
-              onChange={handleTargetLanguage}
-              value={pickSingle(TargetLanguage, targetLanguage)}
-            />
-          </div>
-
-          <div className='form-group'>
-            <label className="label">Level of Target Language*</label>
-            <Select
-              options={TargetLanguageProficiency}
-              onChange={handleTargetLanguageProficiency}
-              value={pickSingle(TargetLanguageProficiency, targetLanguageProficiency)}
-            />
-          </div>
-
-          <div className='form-group'>
-            <label className="label">Age*</label>
-            <input
-              placeholder="Enter Age"
-              onChange={handleAge}
-              className="input"
-              type="text"
-              value={age}
-            />
-          </div>
-
-          <div className='form-group'>
-            <label className="label">Gender</label>
-            <Select
-              options={Gender}
-              onChange={handleGender}
-              value={pickSingle(Gender, gender)}
-            />
-          </div>
-
-          <div className='form-group'>
-            <label className="label">Profession*</label>
-            <Select
-              options={Profession}
-              onChange={handleProfession}
-              value={pickSingle(Profession, profession)}
-            />
-          </div>
-
-          <div className='form-group'>
-            <label className="label">Personality Type</label>
-            <Select
-              options={MBTI}
-              onChange={handleMBTI}
-              value={pickSingle(MBTI, mbti)}
-            />
-          </div>
-
-          <div className='form-group'>
-            <label className="label">Zodiac</label>
-            <Select
-              options={Zodiac}
-              onChange={handleZodiac}
-              value={pickSingle(Zodiac, zodiac)}
-            />
-          </div>
-
-          <div className='form-group'>
-            <label className="label">Interests</label>
-            <Select
-              isMulti
-              options={allInterests}
-              onChange={handleInterestsChange}
-              value={selectedInterests}
-            />
-          </div>
-
-          <div className='form-group'>
-            <label className="label">Default Time Zone</label>
-            <Select
-              options={TimeZones}
-              onChange={handleDefaultTimeZone}
-              value={pickSingle(TimeZones, defaultTimeZone)}
-            />
-          </div>
-
-          <div className='form-group'>
-            <label className="label">Availability</label>
-            <Select
-              isMulti
-              options={availabilityOptions}
-              value={availability}
-              onChange={handleAvailability}
-            />
-          </div>
-
-          <div className='form-group'>
-            <label className="label">Visibility</label>
-            <Select
-              options={VisibilityOptions}
-              onChange={handleVisibility}
-              value={pickSingle(VisibilityOptions, visibility)}
-            />
-          </div>
-
-          <div className="profile-buttons">
-            <button
-              className="btn-back-02"
-              type="button"
-              onClick={handleSubmit}
-            >
-              Create Profile
-            </button>
-            <button
-              className="btn-back-02"
-              type="button"
-              onClick={handleBack}
-            >
-              Back
-            </button>
-          </div>
-        </form>
       </div>
     </div>
   );

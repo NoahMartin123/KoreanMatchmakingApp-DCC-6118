@@ -13,6 +13,13 @@ import * as aiAssistantController from "../controller/aiAssistantController.js";
 import recordingController from "../controller/recordingController.js"; // Add this
 import { getMeetingsForUser } from "../controller/meetingController.js";
 import fs from "fs";
+import gameRoutes from './gameRoutes.js';
+import gameLogicRoutes from './gameLogicRoutes.js';
+import teamRoutes from './teamRoutes.js';
+import questRoutes from './questRoutes.js';
+import badgeRoutes from './badgeRoutes.js';
+import challengeRoutes from './challengeRoutes.js';
+import uploadRoutes from './uploadRoutes.js';
 
 // ES module equivalent of __dirname
 const __filename = fileURLToPath(import.meta.url);
@@ -85,6 +92,9 @@ const initAPIRoute = (app) => {
     router.post('/addTrueFriend', APIController.addTrueFriend);
     router.delete('/removeTrueFriend', APIController.removeTrueFriend);
     router.get('/friends/:userId', APIController.getTrueFriendsList);
+    router.get('/friendRequests/:userId', APIController.getFriendRequests);
+    router.put('/friendRequests/:requestId/accept', APIController.acceptFriendRequest);
+    router.put('/friendRequests/:requestId/reject', APIController.rejectFriendRequest);
 
     router.get("/api/availability/:userId", APIController.getUserAvailability);
 
@@ -123,7 +133,16 @@ const initAPIRoute = (app) => {
     // Recording route - ADD THIS
     router.post('/upload-recording', upload.single('audio'), recordingController.uploadRecording);
 
+    app.use('/api/games', gameRoutes);
+    app.use('/api/games', gameLogicRoutes);
+    app.use('/api/teams', teamRoutes);
+    app.use('/api/quests', questRoutes);
+    app.use('/api/badges', badgeRoutes);
+    app.use('/api/challenges', challengeRoutes);
+    app.use('/api/upload', uploadRoutes);
+
     return app.use('/api/v1/', router)
+
 }
 
 export default initAPIRoute;

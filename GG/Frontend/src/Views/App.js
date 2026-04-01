@@ -16,6 +16,8 @@ import store from "../store/ReduxStore";
 import { useDispatch } from "react-redux";
 import HelpPage from '../Components/HelpPage';
 import Translator from "../Components/Translator";
+import TranslatorPanel from "../Components/TranslatorPanel";
+import { TranslatorProvider } from "../context/TranslatorContext";
 import Videocall from "../Components/Videocall";
 import PostVideocall from '../Components/PostVideocall';
 import FriendSearch from '../Components/FriendSearch';
@@ -25,13 +27,21 @@ import AvailabilityPicker from '../Components/AvailabilityPicker';
 import Assistant from "../Components/Assistant";
 import Scheduler from "../Components/Scheduler";
 import TranscriptView from "../Components/TranscriptView";
+import GameSelection from '../Components/GameSelect';
+import TermMatching from '../Components/TermMatching';
+import GrammarQuiz from '../Components/GrammarQuiz';
+import PronunciationDrill from '../Components/PronunciationDrill';
+import ChallengeHub from '../Components/ChallengeHub';
+import TeamLobby  from '../Components/TeamLobby';
+import TeamCreate from '../Components/TeamCreate';
+import TeamPage   from '../Components/TeamPage';
 
 const App = () => {
 
 
   return (
     <div className="App">
-
+      <TranslatorProvider>
       <Router>
        <Routes>
           <Route path ="/" element ={<Home />}/>
@@ -53,9 +63,18 @@ const App = () => {
           <Route path="/Assistant" element={<Assistant />} />
           <Route path="/Scheduler" element={<Scheduler />} />
           <Route path="/TranscriptView" element={<TranscriptView />} />
+          <Route path="/GameSelection" element={<GameSelection />} />
+          <Route path="/TermMatching" element={<TermMatching />} />
+          <Route path="/GrammarQuiz" element={<GrammarQuiz />} />
+          <Route path="/PronunciationDrill" element={<PronunciationDrill />} />
+          <Route path="/Challenges" element={<ChallengeHub />} />
+          <Route path="/TeamLobby"  element={<TeamLobby />} />
+          <Route path="/TeamCreate" element={<TeamCreate />} />
+          <Route path="/TeamPage"   element={<TeamPage />} />
        </Routes>
       </Router>
-
+      <TranslatorPanel />
+      </TranslatorProvider>
     </div>
   );
 }

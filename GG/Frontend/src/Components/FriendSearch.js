@@ -1,12 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { FiUserPlus } from 'react-icons/fi';
-import { DateTime } from "luxon";  
+import { DateTime } from "luxon";
 import Select from "react-select";
 
 import {
   handleGetUserNamesApi,
   handleGetUserPreferencesApi,
-  handleGetUserProfileApi,
 } from '../Services/findFriendsService';
 import './FriendSearch.css';
 import {
@@ -20,127 +18,124 @@ import {
   handleGetUserInterests,
   handleGetUserAvailability,
   handleAddTrueFriend,
+  handleGetFriendRequests,
+  handleAcceptFriendRequestByRequestId,
+  handleRejectFriendRequestByRequestId,
 } from '../Services/userService';
+import { getImageUrl } from '../Services/uploadImageService';
+import Navbar from './NavBar';
+
+function Avatar({ src, name, size = 44 }) {
+  const initial = name ? name.charAt(0).toUpperCase() : '?';
+  return (
+    <div className="fs-avatar" style={{ width: size, height: size }}>
+      {src ? (
+        <img src={getImageUrl(src)} alt={name} />
+      ) : (
+        <span>{initial}</span>
+      )}
+    </div>
+  );
+}
+
+const MBTI_OPTIONS = [
+  'INTJ','INTP','ENTJ','ENTP',
+  'INFJ','INFP','ENFJ','ENFP',
+  'ISTJ','ISFJ','ESTJ','ESFJ',
+  'ISTP','ISFP','ESTP','ESFP'
+].map(v => ({ value: v, label: v }));
+
+const ZODIAC_OPTIONS = [
+  'Aries','Taurus','Gemini','Cancer','Leo','Virgo',
+  'Libra','Scorpio','Sagittarius','Capricorn','Aquarius','Pisces'
+].map(v => ({ value: v, label: v }));
+
+const FILTER_TABS = ['Name', 'MBTI / Zodiac', 'Interests', 'Availability'];
+
+const selectStyles = {
+  container: (base) => ({ ...base, width: '100%' }),
+  control:   (base, state) => ({
+    ...base, minHeight: 38, borderRadius: 8,
+    borderColor: state.isFocused ? '#6344A6' : '#d4d4d8',
+    boxShadow: 'none', fontSize: 13,
+    '&:hover': { borderColor: '#6344A6' }
+  }),
+  multiValue:       (base) => ({ ...base, background: '#ede9fe' }),
+  multiValueLabel:  (base) => ({ ...base, color: '#6344A6', fontSize: 12 }),
+  multiValueRemove: (base) => ({ ...base, color: '#6344A6', ':hover': { background: '#6344A6', color: '#fff' } }),
+  menu: (base) => ({ ...base, zIndex: 5 })
+};
 
 const FriendSearch = () => {
+  const [search] = useSearchParams();
+  const id = search.get('id');
+  const navigate = useNavigate();
+  const currentUserEmail = getUserData()?.email;
+
   const [filterInput, setFilterInput] = useState('');
-  const [preferenceFilterInput, setPreferenceFilterInput] = useState('');
-  const [recentChatPartners, setRecentChatPartners] = useState([]);
   const [userNames, setUserNames] = useState([]);
   const [allUserNames, setAllUserNames] = useState([]);
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [selectedUserProfile, setSelectedUserProfile] = useState(null);
-  const [compatibilityScore, setCompatibilityScore] = useState(null);
+  const [profileBlockedMessage, setProfileBlockedMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
-  const navigate = useNavigate();
-  const [search] = useSearchParams();
-  const id = search.get('id');
-  const [userList, setUserList] = useState('');
   const [selectedAvailability, setSelectedAvailability] = useState(null);
   const [allInterests, setAllInterests] = useState([]);
   const [selectedInterests, setSelectedInterests] = useState([]);
   const [selectedMbti, setSelectedMbti] = useState([]);
   const [selectedZodiac, setSelectedZodiac] = useState([]);
-
-  const handleAvailabilityFilter = () => {
-    if (!selectedAvailability || selectedAvailability.length === 0) {
-      setSuccessMessage('Please select availability times first');
-      setTimeout(() => setSuccessMessage(''), 3000);
-      return;
-    }
-
-    try {
-      const selectedSlotsUTC = selectedAvailability.map(slot => {
-        const convertTo24Hr = (timeStr) => {
-          const dt = DateTime.fromFormat(timeStr.trim(), "h a", { zone: currentUser?.default_time_zone || "UTC" });
-          return dt.isValid ? dt.toFormat("HH:mm") : null;
-        };
-        
-        const start = convertTo24Hr(slot.time);
-        const end = DateTime.fromFormat(start, "HH:mm").plus({ hours: 1 }).toFormat("HH:mm");
-        return {
-          day_of_week: slot.day,
-          start_utc: DateTime.fromISO(`2024-01-01T${start}`, { zone: currentUser?.default_time_zone || "UTC" }).toUTC(),
-          end_utc: DateTime.fromISO(`2024-01-01T${end}`, { zone: currentUser?.default_time_zone || "UTC" }).toUTC(),
-        };
-      });
-
-      const filteredUsers = allUserNames.filter(user => {
-        if (!Array.isArray(user.Availability) || user.Availability.length === 0)
-          return false;
-
-        const userZone = user.default_time_zone || "UTC";
-        return user.Availability.some(userSlot => {
-          const userStartUTC = DateTime.fromISO(`2024-01-01T${userSlot.start_time}`, { zone: userZone }).toUTC();
-          const userEndUTC = DateTime.fromISO(`2024-01-01T${userSlot.end_time}`, { zone: userZone }).toUTC();
-
-          return selectedSlotsUTC.some(selSlot =>
-            userSlot.day_of_week === selSlot.day_of_week &&
-            userStartUTC.toISO() === selSlot.start_utc.toISO() &&
-            userEndUTC.toISO() === selSlot.end_utc.toISO()
-          );
-        });
-      });
-      setUserNames(filteredUsers);
-      setSuccessMessage(`Filtered by availability`);
-      setTimeout(() => setSuccessMessage(''), 3000);
-    } catch (error) {
-      setSuccessMessage("Error applying availability filter");
-      setTimeout(() => setSuccessMessage(""), 3000);
-    }
-  };
+  const [activeFilter, setActiveFilter] = useState(0);
+  const [friendRequests, setFriendRequests] = useState({ incoming: [], outgoing: [] });
 
   useEffect(() => {
     const fetchUserData = async () => {
       try {
-        const userResponse = await handleGetUserNamesApi();
+        const userResponse = await handleGetUserNamesApi(id);
         const profilesResponse = await handleGetUserPreferencesApi();
 
-        const mergedUsers = await Promise.all(
-          userResponse.data.map(async (user) => {
-            const userProfile = profilesResponse.data.find(
-              (profile) => profile.id === user.id
-            );
-        
-            let userInterests = [];
-            try {
-              const interestsResponse = await handleGetUserInterests(user.id);
-              userInterests = interestsResponse || [];
-            } catch {}
+        // Our axios instance interceptor returns response.data directly,
+        // so `handleGetUserNamesApi()` and `handleGetUserPreferencesApi()`
+        // may be arrays already (not `{ data: ... }` objects).
+        const usersArr = userResponse?.data ?? userResponse;
+        const profilesArr = profilesResponse?.data ?? profilesResponse;
 
+        const mergedUsers = await Promise.all(
+          (usersArr || []).map(async (user) => {
+            const userProfile = (profilesArr || []).find((p) => p.id === user.id);
+            let userInterests = [];
+            try { const r = await handleGetUserInterests(user.id); userInterests = r || []; } catch {}
             let userAvailability = [];
-            try {
-              const availabilityResponse = await handleGetUserAvailability(user.id);
-              userAvailability = availabilityResponse || [];
-            } catch {}
-        
-            return {
-              ...user,
-              ...userProfile,
-              Interests: userInterests,
-              Availability: userAvailability,
-              score: null,
-            };
+            try { const r = await handleGetUserAvailability(user.id); userAvailability = r || []; } catch {}
+            return { ...user, ...userProfile, Interests: userInterests, Availability: userAvailability, score: null };
           })
         );
 
-        const visibleUsers = mergedUsers.filter((user) => user.visibility === 'Show');
-
+        // If a user's preferences row is missing, `visibility` can be undefined.
+        // In that case, don't hide them from search entirely.
+        const visibleUsers = mergedUsers.filter((u) => {
+          const isSelfById = id && String(u.id) === String(id);
+          const isSelfByEmail = currentUserEmail && u.email === currentUserEmail;
+          const isSelf = Boolean(isSelfById || isSelfByEmail);
+          return (u.visibility ? u.visibility === 'Show' : true) && !isSelf;
+        });
         setUserNames(visibleUsers);
         setAllUserNames(visibleUsers);
-
-        const currentUserData = getUserData();
-        setCurrentUser(currentUserData);
-
+        setCurrentUser(getUserData());
         setLoading(false);
       } catch (err) {
-        setError(err);
+        const code = err?.response?.data?.code;
+        if (code === 'PROFILE_INCOMPLETE') {
+          setProfileBlockedMessage(
+            err?.response?.data?.message || 'Complete your profile before finding friends.'
+          );
+          setError(null);
+        } else {
+          setError(err);
+        }
         setLoading(false);
       }
     };
-
     fetchUserData();
 
     const fetchInterests = async () => {
@@ -150,23 +145,28 @@ const FriendSearch = () => {
         const names = Array.isArray(raw)
           ? raw.map(i => i?.interest_name ?? i?.name ?? i).filter(Boolean)
           : [];
-        const uniqueSorted = Array.from(new Set(names)).sort((a,b) => a.localeCompare(b));
-        setAllInterests(uniqueSorted);
-      } catch {
-        setAllInterests([]);
-      }
+        setAllInterests(Array.from(new Set(names)).sort((a, b) => a.localeCompare(b)));
+      } catch { setAllInterests([]); }
     };
-
     fetchInterests();
-    
+
+    const fetchRequests = async () => {
+      if (!id) return;
+      try {
+        const res = await handleGetFriendRequests(id);
+        setFriendRequests({
+          incoming: Array.isArray(res?.incoming) ? res.incoming : [],
+          outgoing: Array.isArray(res?.outgoing) ? res.outgoing : [],
+        });
+      } catch { }
+    };
+    fetchRequests();
   }, [id]);
 
   useEffect(() => {
     const availabilityParam = search.get('availability');
     if (availabilityParam) {
-      try {
-        setSelectedAvailability(JSON.parse(availabilityParam));
-      } catch {}
+      try { setSelectedAvailability(JSON.parse(availabilityParam)); } catch {}
     }
   }, [search]);
 
@@ -174,441 +174,361 @@ const FriendSearch = () => {
     if (selectedAvailability && selectedAvailability.length > 0 && allUserNames.length > 0) {
       handleAvailabilityFilter();
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedAvailability, allUserNames]);
 
-  const handleQuickAddFriend = async (user) => {
+  const flash = (msg) => { setSuccessMessage(msg); setTimeout(() => setSuccessMessage(''), 2500); };
+
+  const getRequestStatusForUser = (userId) => {
+    const incoming = friendRequests.incoming.find(r => Number(r.requesterId) === Number(userId));
+    if (incoming) return { status: 'pending_received', requestId: incoming.id };
+    const outgoing = friendRequests.outgoing.find(r => Number(r.recipientId) === Number(userId));
+    if (outgoing) return { status: 'pending_sent', requestId: outgoing.id };
+    return { status: 'none', requestId: null };
+  };
+
+  const handleSendRequest = async (user) => {
     try {
       await handleAddTrueFriend(Number(id), Number(user.id));
-
-      setSuccessMessage(`Added ${user.firstName} ${user.lastName} to your friends!`);
-      setTimeout(() => setSuccessMessage(''), 2500);
+      flash(`Friend request sent to ${user.firstName} ${user.lastName}`);
+      await refreshRequests();
     } catch (err) {
-      const msg = err?.response?.data?.error || err.message;
-      setSuccessMessage(
-        msg === 'Friendship already exists'
-          ? 'Already friends!'
-          : `Could not add friend: ${msg}`
-      );
-      setTimeout(() => setSuccessMessage(''), 2500);
+      const msg = err?.response?.data?.error || err.message || 'Could not send request';
+      flash(`Could not add friend: ${msg}`);
     }
   };
 
-  const fetchUserProfile = async (userId) => {
+  const refreshRequests = async () => {
+    if (!id) return;
     try {
-      const response = await handleGetUserProfileApi(userId);
-      setSelectedUserProfile(response.data);
-    } catch {}
+      const res = await handleGetFriendRequests(id);
+      setFriendRequests({
+        incoming: Array.isArray(res?.incoming) ? res.incoming : [],
+        outgoing: Array.isArray(res?.outgoing) ? res.outgoing : [],
+      });
+    } catch { }
   };
 
-  const calculateCompatibilityScore = (selectedProfile) => {
-    if (!currentUser || !selectedProfile) return 0;
-
-    const genderScore =
-      6 * (selectedProfile.gender === currentUser.gender ? 1 : 0);
-    const professionScore =
-      5 * (selectedProfile.profession === currentUser.profession ? 1 : 0);
-
-    const interestsA = (selectedProfile.Interests || []).map(i => i.interest_name || i);
-    const interestsB = (currentUser.Interests || []).map(i => i.interest_name || i);
-    const shared = interestsA.filter(n => interestsB.includes(n));
-    const interestsScore = 2 * shared.length;
-
-    const ageDifferenceScore =
-      -0.3 * Math.abs((selectedProfile.age || 0) - (currentUser.age || 0));
-
-    const totalScore =
-      genderScore + professionScore + interestsScore + ageDifferenceScore;
-
-    return parseFloat(totalScore.toFixed(2));
-  };
-
-  const calculateAllCompatibilityScores = () => {
-    const scoredUsers = userNames.map((user) => {
-      const score = calculateCompatibilityScore(user);
-      return { ...user, score };
-    });
-
-    const sortedUsers = scoredUsers.sort((a, b) => b.score - a.score);
-    setUserNames(sortedUsers);
-  };
-
-  const handleNameFilter = () => {
-    const q = filterInput.trim().toLowerCase();
-    if (!q) return setUserNames(allUserNames);
-
-    const filtered = allUserNames.filter(
-      (u) =>
-        u.firstName.toLowerCase().includes(q) ||
-        u.lastName.toLowerCase().includes(q) ||
-        u.email.toLowerCase().includes(q)
-    );
-
-    setUserNames(filtered.length > 0 ? filtered : allUserNames);
-  };
-
-  const handlePreferenceFilter = async () => {
-    const q = preferenceFilterInput.trim().toLowerCase();
-
-    if (!q) return setUserNames(allUserNames);
-
+  const handleAccept = async (requestId, requesterName) => {
     try {
-      const preferencesResponse = await handleGetUserPreferencesApi();
-      const preferences = preferencesResponse.data;
-
-      const filteredPreferences = preferences.filter((pref) =>
-        Object.values(pref).some((value) =>
-          String(value).toLowerCase().includes(q)
-        )
-      );
-
-      if (filteredPreferences.length === 0) {
-        setUserNames(allUserNames);
-      } else {
-        const matchedIds = filteredPreferences.map((p) => p.id);
-        const filteredNames = allUserNames.filter((user) =>
-          matchedIds.includes(user.id)
-        );
-        setUserNames(filteredNames.length > 0 ? filteredNames : allUserNames);
-      }
-    } catch {}
-  };
-
-  const handleClearAvailabilityFilter = () => {
-    setSelectedAvailability(null);
-    setUserNames(allUserNames);
-  };
-
-  const handleUserClick = async (user) => {
-    fetchUserProfile(user.id);
-
-    if (!recentChatPartners.some((partner) => partner.id === user.id)) {
-      setRecentChatPartners([...recentChatPartners, user]);
+      await handleAcceptFriendRequestByRequestId(requestId, Number(id));
+      await refreshRequests();
+      flash(`You are now friends with ${requesterName}!`);
+    } catch (err) {
+      flash('Could not accept request.');
     }
   };
 
-  const handleNavigateToAvailabilityPicker = () => {
-    navigate({
-      pathname: '/AvailabilityPicker',
-      search: createSearchParams({ id }).toString(),
-    });
-  };
-
-  const handleBack = () => {
-    navigate({
-      pathname: '/Dashboard',
-      search: createSearchParams({ id }).toString(),
-    });
-  };
-
-  if (loading) return <p>Loading...</p>;
-  if (error) return <p>Error: {error.message}</p>;
-
-  const getField = (user, fieldNames) => {
-    for (let field of fieldNames) {
-      if (user[field] !== undefined && user[field] !== null) {
-        return user[field];
-      }
+  const handleDecline = async (requestId, requesterName) => {
+    try {
+      await handleRejectFriendRequestByRequestId(requestId, Number(id));
+      await refreshRequests();
+      flash(`Request from ${requesterName} declined.`);
+    } catch (err) {
+      flash('Could not decline request.');
     }
-    return 'N/A';
   };
 
-  const MBTI_OPTIONS = [
-    'INTJ','INTP','ENTJ','ENTP',
-    'INFJ','INFP','ENFJ','ENFP',
-    'ISTJ','ISFJ','ESTJ','ESFJ',
-    'ISTP','ISFP','ESTP','ESFP'
-  ];
-  const ZODIAC_OPTIONS = [
-    'Aries','Taurus','Gemini','Cancer','Leo','Virgo',
-    'Libra','Scorpio','Sagittarius','Capricorn','Aquarius','Pisces'
-  ];
-
-  const MBTI_OPTIONS_OPT   = MBTI_OPTIONS.map(v => ({ value: v, label: v }));
-  const ZODIAC_OPTIONS_OPT = ZODIAC_OPTIONS.map(v => ({ value: v, label: v }));
-
-  const customSelectStyles = {
-    container: (base) => ({ ...base, width: '100%' }),
-    control:   (base, state) => ({
-      ...base,
-      minHeight: 42,
-      borderRadius: 6,
-      borderColor: state.isFocused ? '#6344A6' : '#ccc',
-      boxShadow: 'none',
-      '&:hover': { borderColor: '#6344A6' }
-    }),
-    multiValue:       (base) => ({ ...base, background: '#ede7f6' }),
-    multiValueLabel:  (base) => ({ ...base, color: '#6344A6' }),
-    multiValueRemove: (base) => ({
-      ...base,
-      color: '#6344A6',
-      ':hover': { background: '#6344A6', color: '#fff' }
-    }),
-    menu: (base) => ({ ...base, zIndex: 5 })
+  const calculateCompatibilityScore = (profile) => {
+    if (!currentUser || !profile) return 0;
+    const g = 6 * (profile.gender === currentUser.gender ? 1 : 0);
+    const p = 5 * (profile.profession === currentUser.profession ? 1 : 0);
+    const iA = (profile.Interests || []).map(i => i.interest_name || i);
+    const iB = (currentUser.Interests || []).map(i => i.interest_name || i);
+    const shared = iA.filter(n => iB.includes(n));
+    const ageDiff = -0.3 * Math.abs((profile.age || 0) - (currentUser.age || 0));
+    return parseFloat((g + p + 2 * shared.length + ageDiff).toFixed(2));
   };
 
-  const applyPersonalityFilters = () => {
+  const sortByCompatibility = () => {
+    const scored = userNames.map((u) => ({ ...u, score: calculateCompatibilityScore(u) }));
+    setUserNames(scored.sort((a, b) => b.score - a.score));
+  };
+
+  const applyFilters = () => {
     let base = allUserNames;
-
     const q = (filterInput || '').trim().toLowerCase();
     if (q) {
       base = base.filter(u =>
         (u.firstName || '').toLowerCase().includes(q) ||
-        (u.lastName  || '').toLowerCase().includes(q) ||
-        (u.email     || '').toLowerCase().includes(q)
+        (u.lastName || '').toLowerCase().includes(q) ||
+        (u.email || '').toLowerCase().includes(q)
       );
     }
-
     if (selectedMbti.length) {
-      const mbtiSet = new Set(selectedMbti.map(v => v.toUpperCase()));
-      base = base.filter(u => mbtiSet.has(String(u.mbti || '').toUpperCase()));
+      const s = new Set(selectedMbti.map(v => v.toUpperCase()));
+      base = base.filter(u => s.has(String(u.mbti || '').toUpperCase()));
     }
-
     if (selectedZodiac.length) {
-      const zSet = new Set(selectedZodiac.map(v => v.toLowerCase()));
-      base = base.filter(u => zSet.has(String(u.zodiac || '').toLowerCase()));
+      const s = new Set(selectedZodiac.map(v => v.toLowerCase()));
+      base = base.filter(u => s.has(String(u.zodiac || '').toLowerCase()));
     }
-
     if (selectedInterests.length) {
       const wanted = new Set(selectedInterests.map(v => v.toLowerCase()));
-
       base = base.filter(u => {
-        const userInterestStrings = [];
-
+        const names = [];
         if (Array.isArray(u.Interests)) {
           for (const it of u.Interests) {
-            const name = (it?.interest_name ?? it)?.toString().toLowerCase();
-            if (name) userInterestStrings.push(name);
+            const n = (it?.interest_name ?? it)?.toString().toLowerCase();
+            if (n) names.push(n);
           }
         }
-
-        const extras = [u.interests, u.interest, u.hobby]
-          .filter(Boolean)
+        [u.interests, u.interest, u.hobby].filter(Boolean)
           .flatMap(v => Array.isArray(v) ? v : [v])
-          .map(v => String(v).toLowerCase());
-
-        userInterestStrings.push(...extras);
-
-        return userInterestStrings.some(s => wanted.has(s));
+          .forEach(v => names.push(String(v).toLowerCase()));
+        return names.some(s => wanted.has(s));
       });
     }
-
     setUserNames(base);
   };
 
-  const clearPersonalityFilters = () => {
+  const clearAll = () => {
+    setFilterInput('');
     setSelectedMbti([]);
     setSelectedZodiac([]);
     setSelectedInterests([]);
+    setSelectedAvailability(null);
     setUserNames(allUserNames);
   };
 
+  const handleAvailabilityFilter = () => {
+    if (!selectedAvailability || selectedAvailability.length === 0) return;
+    try {
+      const selectedSlotsUTC = selectedAvailability.map(slot => {
+        const convertTo24Hr = (timeStr) => {
+          const dt = DateTime.fromFormat(timeStr.trim(), "h a", { zone: currentUser?.default_time_zone || "UTC" });
+          return dt.isValid ? dt.toFormat("HH:mm") : null;
+        };
+        const start = convertTo24Hr(slot.time);
+        const end = DateTime.fromFormat(start, "HH:mm").plus({ hours: 1 }).toFormat("HH:mm");
+        return {
+          day_of_week: slot.day,
+          start_utc: DateTime.fromISO(`2024-01-01T${start}`, { zone: currentUser?.default_time_zone || "UTC" }).toUTC(),
+          end_utc: DateTime.fromISO(`2024-01-01T${end}`, { zone: currentUser?.default_time_zone || "UTC" }).toUTC(),
+        };
+      });
+      const filtered = allUserNames.filter(user => {
+        if (!Array.isArray(user.Availability) || user.Availability.length === 0) return false;
+        const userZone = user.default_time_zone || "UTC";
+        return user.Availability.some(userSlot => {
+          const userStartUTC = DateTime.fromISO(`2024-01-01T${userSlot.start_time}`, { zone: userZone }).toUTC();
+          const userEndUTC = DateTime.fromISO(`2024-01-01T${userSlot.end_time}`, { zone: userZone }).toUTC();
+          return selectedSlotsUTC.some(selSlot =>
+            userSlot.day_of_week === selSlot.day_of_week &&
+            userStartUTC.toISO() === selSlot.start_utc.toISO() &&
+            userEndUTC.toISO() === selSlot.end_utc.toISO()
+          );
+        });
+      });
+      setUserNames(filtered);
+    } catch {}
+  };
+
+  const getField = (user, fields) => {
+    for (let f of fields) { if (user[f] != null) return user[f]; }
+    return null;
+  };
+
+  if (loading) return <div className="fs-page"><Navbar id={id} /><p style={{ textAlign: 'center', marginTop: 60 }}>Loading...</p></div>;
+  if (profileBlockedMessage) {
+    return (
+      <div className="fs-page">
+        <Navbar id={id} />
+        <p style={{ textAlign: 'center', marginTop: 60, color: '#b45309' }}>{profileBlockedMessage}</p>
+      </div>
+    );
+  }
+  if (error) return <div className="fs-page"><Navbar id={id} /><p style={{ textAlign: 'center', marginTop: 60, color: '#dc2626' }}>Error loading users.</p></div>;
+
   return (
-    <div className="friend-search-container">
-      <div className="filter-sidebar">
-        <div className="filter-section">
-          <h3>Filter Users by Name</h3>
-          <input
-            type="text"
-            placeholder="Enter name or email"
-            value={filterInput}
-            onChange={(e) => setFilterInput(e.target.value)}
-          />
-          <button className="filter-btn" onClick={handleNameFilter}>
-            Filter by Name
-          </button>
-        </div>
+    <div className="fs-page">
+      <Navbar id={id} />
 
-        <div className="filter-section">
-          <h3>Filter Users by MBTI & Zodiac</h3>
+      <div className="fs-center">
+        <div className="fs-card">
+          <button className="back-to-dashboard" onClick={() => navigate({ pathname: '/Dashboard', search: createSearchParams({ id }).toString() })}>Dashboard</button>
+          <h1 className="fs-card-title">Find Friends</h1>
+          <p className="fs-card-subtitle">Search and filter to find your perfect language partner</p>
 
-          <div className="two-col">
-            <div>
-              <label className="filter-label">MBTI (multi-select)</label>
-              <Select
-                isMulti
-                options={MBTI_OPTIONS_OPT}
-                value={MBTI_OPTIONS_OPT.filter(o => selectedMbti.includes(o.value))}
-                onChange={(vals) => setSelectedMbti((vals || []).map(v => v.value))}
-                placeholder="Select MBTI types…"
-                styles={customSelectStyles}
-              />
-            </div>
-
-            <div>
-              <label className="filter-label">Zodiac (multi-select)</label>
-              <Select
-                isMulti
-                options={ZODIAC_OPTIONS_OPT}
-                value={ZODIAC_OPTIONS_OPT.filter(o => selectedZodiac.includes(o.value))}
-                onChange={(vals) => setSelectedZodiac((vals || []).map(v => v.value))}
-                placeholder="Select zodiac signs…"
-                styles={customSelectStyles}
-              />
-            </div>
+          {/* Search bar — Instagram-style */}
+          <div className="fs-search-wrap">
+            <input
+              className="fs-input"
+              type="text"
+              placeholder="Search"
+              value={filterInput}
+              onChange={(e) => setFilterInput(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && applyFilters()}
+            />
+            <button className="fs-btn-follow" onClick={applyFilters}>Search</button>
           </div>
 
-          <div className="btn-row spread">
-            <button className="filter-btn" onClick={applyPersonalityFilters}>
-              Apply Filters
-            </button>
-            <button className="filter-btn" onClick={clearPersonalityFilters}>
-              Clear
-            </button>
-          </div>
-        </div>
-
-        <div className="filter-section">
-          <h3>Filter Users by Interest(s)</h3>
-
-          <label className="filter-label">Interests (multi-select)</label>
-          <Select
-            isMulti
-            options={allInterests.map(n => ({ value: n, label: n }))}
-            value={allInterests
-              .map(n => ({ value: n, label: n }))
-              .filter(o => selectedInterests.includes(o.value))}
-            onChange={(vals) => setSelectedInterests((vals || []).map(v => v.value))}
-            placeholder="Select interests…"
-            styles={customSelectStyles}
-          />
-
-          <div className="btn-row spread" style={{ marginTop: 10 }}>
-            <button
-              className="filter-btn"
-              onClick={applyPersonalityFilters}
-            >
-              Apply Interests
-            </button>
-            <button
-              className="filter-btn"
-              onClick={() => {
-                setSelectedInterests([]);
-                setUserNames(allUserNames);
-              }}
-            >
-              Clear
-            </button>
-          </div>
-        </div>
-
-        <div className="filter-section">
-          <h3>Filter by Availability</h3>
-          <button
-            className="filter-btn availability-btn"
-            onClick={handleNavigateToAvailabilityPicker}
-          >
-            Filter by Availability
-          </button>
-          {selectedAvailability && selectedAvailability.length > 0 && (
-            <div className="availability-display">
-              <p className="availability-label">Selected Times:</p>
-              <div className="availability-slots">
-                {selectedAvailability.map((slot, index) => (
-                  <span key={index} className="availability-slot">
-                    {slot.day} {slot.time}
-                  </span>
-                ))}
-              </div>
-              <button className="clear-availability-btn" onClick={handleClearAvailabilityFilter}>
-                Clear Availability Filter
+          {/* Filter tabs */}
+          <div className="fs-filter-tabs">
+            {FILTER_TABS.map((tab, i) => (
+              <button
+                key={tab}
+                className={`fs-filter-tab ${activeFilter === i ? 'fs-filter-tab-active' : ''}`}
+                onClick={() => setActiveFilter(activeFilter === i ? -1 : i)}
+              >
+                {tab}
               </button>
+            ))}
+          </div>
+
+          {/* MBTI / Zodiac panel */}
+          {activeFilter === 1 && (
+            <div className="fs-filter-panel">
+              <div className="fs-filter-row">
+                <div>
+                  <div className="fs-filter-label">MBTI</div>
+                  <Select isMulti options={MBTI_OPTIONS}
+                    value={MBTI_OPTIONS.filter(o => selectedMbti.includes(o.value))}
+                    onChange={(vals) => setSelectedMbti((vals || []).map(v => v.value))}
+                    placeholder="Select..." styles={selectStyles} />
+                </div>
+                <div>
+                  <div className="fs-filter-label">Zodiac</div>
+                  <Select isMulti options={ZODIAC_OPTIONS}
+                    value={ZODIAC_OPTIONS.filter(o => selectedZodiac.includes(o.value))}
+                    onChange={(vals) => setSelectedZodiac((vals || []).map(v => v.value))}
+                    placeholder="Select..." styles={selectStyles} />
+                </div>
+              </div>
+              <div className="fs-filter-actions">
+                <button className="fs-btn-secondary" onClick={clearAll}>Clear</button>
+                <button className="fs-btn-primary" onClick={applyFilters}>Apply</button>
+              </div>
+            </div>
+          )}
+
+          {/* Interests panel */}
+          {activeFilter === 2 && (
+            <div className="fs-filter-panel">
+              <div className="fs-filter-label">Interests</div>
+              <Select isMulti
+                options={allInterests.map(n => ({ value: n, label: n }))}
+                value={allInterests.map(n => ({ value: n, label: n })).filter(o => selectedInterests.includes(o.value))}
+                onChange={(vals) => setSelectedInterests((vals || []).map(v => v.value))}
+                placeholder="Select interests..." styles={selectStyles} />
+              <div className="fs-filter-actions">
+                <button className="fs-btn-secondary" onClick={() => { setSelectedInterests([]); setUserNames(allUserNames); }}>Clear</button>
+                <button className="fs-btn-primary" onClick={applyFilters}>Apply</button>
+              </div>
+            </div>
+          )}
+
+          {/* Availability panel */}
+          {activeFilter === 3 && (
+            <div className="fs-filter-panel">
+              <button className="fs-btn-primary" style={{ width: '100%' }}
+                onClick={() => navigate({ pathname: '/AvailabilityPicker', search: createSearchParams({ id }).toString() })}>
+                Pick Availability Times
+              </button>
+              {selectedAvailability && selectedAvailability.length > 0 && (
+                <>
+                  <div className="fs-avail-display">
+                    {selectedAvailability.map((slot, i) => (
+                      <span key={i} className="fs-avail-slot">{slot.day} {slot.time}</span>
+                    ))}
+                  </div>
+                  <button className="fs-btn-secondary" style={{ width: '100%' }}
+                    onClick={() => { setSelectedAvailability(null); setUserNames(allUserNames); }}>
+                    Clear Availability
+                  </button>
+                </>
+              )}
             </div>
           )}
         </div>
-        <button className="btn-back" onClick={handleBack}>
-          Back
-        </button>
-      </div>
 
-      <div className="friend-search">
-        <h1>User Table</h1>
-        <button
-          className="calculate-score-btn"
-          onClick={calculateAllCompatibilityScores}
-        >
-          Calculate Compatibility Scores
-        </button>
-
-        <div className="table-container">
-          <table className="user-table">
-            <thead>
-              <tr>
-                <th>Actions</th>
-                <th>First Name</th>
-                <th>Last Name</th>
-                <th>ID</th>
-                <th>Email</th>
-                <th>Gender</th>
-                <th>Profession</th>
-                <th>Interests</th>
-                <th>MBTI</th>
-                <th>Zodiac</th>
-                <th>Time Zone</th>
-                <th>Age</th>
-                <th>Native Language</th>
-                <th>Target Language</th>
-                <th>Compatibility Score</th>
-                <th>Availability</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {userNames.map((user, index) => (
-                <tr
-                  key={index}
-                  onClick={() => handleUserClick(user)}
-                  className="table-row"
-                >
-                  <td>
+        {/* Incoming requests card */}
+        {friendRequests.incoming.length > 0 && (
+          <div className="fs-card">
+            <h2 className="fs-section-label">Requests</h2>
+            <div className="fs-results-list">
+              {friendRequests.incoming.map((req, i) => (
+                <div key={i} className="fs-user-row">
+                  <Avatar src={req.requesterProfileImage} name={req.requesterFirstName} />
+                  <div className="fs-user-info">
+                    <div className="fs-user-name">{req.requesterFirstName} {req.requesterLastName}</div>
+                    <div className="fs-user-meta">{req.requesterEmail}</div>
+                  </div>
+                  <div className="fs-request-actions">
                     <button
-                      className="add-friend-btn"
-                      title="Add friend"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleQuickAddFriend(user);
-                      }}
+                      className="fs-btn-accept"
+                      onClick={() => handleAccept(req.id, `${req.requesterFirstName} ${req.requesterLastName || ''}`.trim())}
                     >
-                      <FiUserPlus size={18} />
+                      Accept
                     </button>
-                  </td>
-
-                  <td>{user.firstName}</td>
-                  <td>{user.lastName}</td>
-                  <td>{user.id}</td>
-                  <td>{user.email}</td>
-                  <td>{user.gender}</td>
-                  <td>{user.profession}</td>
-                  <td>
-                    {Array.isArray(user.Interests)
-                      ? user.Interests.map(i => i.interest_name).join(', ')
-                      : ''}
-                  </td>
-                  <td>{user.mbti}</td>
-                  <td>{user.zodiac}</td>
-                  <td>{user.default_time_zone}</td>
-                  <td>{user.age}</td>
-                  <td>{getField(user, ["nativeLanguage", "native_language"])}</td>
-                  <td>{getField(user, ["targetLanguage", "target_language"])}</td>
-                  <td>{user.score !== null ? user.score : "N/A"}</td>
-
-                  <td>
-                    {Array.isArray(user.Availability)
-                      ? user.Availability.map(a => `${a.day_of_week} ${a.start_time}`).join(', ')
-                      : ''}
-                  </td>
-
-                </tr>
+                    <button
+                      className="fs-btn-decline"
+                      onClick={() => handleDecline(req.id, `${req.requesterFirstName} ${req.requesterLastName || ''}`.trim())}
+                    >
+                      Decline
+                    </button>
+                  </div>
+                </div>
               ))}
-            </tbody>
-          </table>
-        </div>
-
-        {successMessage && (
-          <div className="success-message">
-            <p>{successMessage}</p>
+            </div>
           </div>
         )}
+
+        {/* Results card */}
+        <div className="fs-card">
+          <div className="fs-results-header">
+            <span className="fs-results-count">{userNames.length} suggested</span>
+            <button className="fs-btn-sort" onClick={sortByCompatibility}>Sort by match</button>
+          </div>
+
+          {userNames.length === 0 ? (
+            <p className="fs-empty">No one matches your search.</p>
+          ) : (
+            <div className="fs-results-list">
+              {userNames.map((user, i) => (
+                <div key={i} className="fs-user-row">
+                  <Avatar src={user.profileImage} name={user.firstName} />
+
+                  <div className="fs-user-info">
+                    <div className="fs-user-name">{user.firstName} {user.lastName}</div>
+                    <div className="fs-user-meta">
+                      {user.profession && <span>{user.profession}</span>}
+                      {user.age && <span> · {user.age}</span>}
+                      {getField(user, ["nativeLanguage", "native_language"]) && (
+                        <span> · {getField(user, ["nativeLanguage", "native_language"])} → {getField(user, ["targetLanguage", "target_language"])}</span>
+                      )}
+                    </div>
+                  </div>
+
+                  {(() => {
+                    const reqStatus = getRequestStatusForUser(user.id);
+                    if (reqStatus.status === 'pending_sent') {
+                      return <span className="fs-status-requested">Requested</span>;
+                    }
+                    if (reqStatus.status === 'pending_received' && reqStatus.requestId) {
+                      const requesterName = `${user.firstName} ${user.lastName || ''}`.trim();
+                      return (
+                        <div className="fs-request-actions">
+                          <button className="fs-btn-accept" onClick={(e) => { e.stopPropagation(); handleAccept(reqStatus.requestId, requesterName); }}>Accept</button>
+                          <button className="fs-btn-decline" onClick={(e) => { e.stopPropagation(); handleDecline(reqStatus.requestId, requesterName); }}>Decline</button>
+                        </div>
+                      );
+                    }
+                    return (
+                      <button className="fs-btn-follow"
+                        onClick={(e) => { e.stopPropagation(); handleSendRequest(user); }}>
+                        Follow
+                      </button>
+                    );
+                  })()}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
+
+      {successMessage && <div className="fs-toast">{successMessage}</div>}
     </div>
   );
 };

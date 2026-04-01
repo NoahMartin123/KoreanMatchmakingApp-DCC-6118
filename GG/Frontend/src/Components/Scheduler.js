@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import './Scheduler.css';
 import { useNavigate, createSearchParams, useSearchParams } from "react-router-dom";
+import Navbar from './NavBar';
+import MeetingCalendar from './MeetingCalendar';
 
 import { 
   handleGetTrueFriendsList, 
@@ -18,17 +20,17 @@ const Scheduler = () => {
   const [search] = useSearchParams();
   const id = search.get("id");
 
-  const [selectedFriend, setSelectedFriend] = useState(null);
-  const [availableSlots, setAvailableSlots] = useState([]);
-  const [selectedSlot, setSelectedSlot] = useState("");
-
+  const [selectedSlotData, setSelectedSlotData] = useState(null);
+  const [scheduleFriendId, setScheduleFriendId] = useState("");
+  const [scheduleError, setScheduleError] = useState("");
+  const [scheduleLoading, setScheduleLoading] = useState(false);
+  const [suggestedSlots, setSuggestedSlots] = useState([]);
 
   const getFriendName = (userId) => {
     const friend = friends.find(f => f.id === userId);
     if (!friend) return "Unknown User";
     return `${friend.firstName} ${friend.lastName}`;
   };
-
 
   useEffect(() => {
     const fetchFriends = async () => {
@@ -44,7 +46,6 @@ const Scheduler = () => {
     if (id) fetchFriends();
   }, [id]);
 
-
   useEffect(() => {
     if (!id) return;
 
@@ -56,7 +57,6 @@ const Scheduler = () => {
       .catch(err => console.error("Failed to fetch meetings:", err));
   }, [id]);
 
-
   const handleBack = () => {
     navigate({
       pathname: "/Dashboard",
@@ -64,224 +64,238 @@ const Scheduler = () => {
     });
   };
 
+  const formatSlotLabel = (slot) => {
+    if (!slot) return "";
+    const fmt = (t) => {
+      const parts = String(t || "0:0").split(":");
+      const h = parseInt(parts[0], 10) || 0;
+      const m = parseInt(parts[1], 10) || 0;
+      return `${h > 12 ? h - 12 : h || 12}:${String(m).padStart(2, "0")} ${h >= 12 ? "PM" : "AM"}`;
+    };
+    const day = slot.dayOfWeek || slot.day_of_week || "";
+    const start = slot.startTime || slot.start_time || slot.start;
+    const end = slot.endTime || slot.end_time || slot.end;
+    return `${day} ${fmt(start)} – ${fmt(end)}`;
+  };
 
-  const handleFriendClick = async (friend) => {
-    setSelectedFriend(friend);
-    setSelectedSlot("");
-    setAvailableSlots([]);
+  const handleScheduleFromCalendar = async () => {
+    if (!selectedSlotData || !scheduleFriendId) return;
+
+    setScheduleError("");
+    setSuggestedSlots([]);
+    setScheduleLoading(true);
 
     try {
-      const data = await handleGetTrueUserAvailability(friend.id);
-      const slots =
-        data?.availability ||
-        data?.slots ||
-        (Array.isArray(data) ? data : []);
+      const data = await handleGetTrueUserAvailability(scheduleFriendId);
+      const slots = data?.availability || data?.slots || (Array.isArray(data) ? data : []);
 
-      setAvailableSlots(Array.isArray(slots) ? slots : []);
+      const parseTime = (t) => {
+        const parts = String(t || "0:0").split(":");
+        return parseInt(parts[0], 10) * 60 + (parseInt(parts[1], 10) || 0);
+      };
+
+      const ourStart = parseTime(selectedSlotData.startTime);
+      const ourEnd = parseTime(selectedSlotData.endTime);
+
+      const overlapping = slots.find((s) => {
+        const day = (s.day_of_week || "").toLowerCase();
+        const targetDay = (selectedSlotData.dayOfWeek || "").toLowerCase();
+        if (!day.startsWith(targetDay.slice(0, 3)) && !targetDay.startsWith(day.slice(0, 3))) return false;
+
+        const slotStart = parseTime(s.start_time || s.startTime || s.start);
+        const slotEnd = parseTime(s.end_time || s.endTime || s.end);
+        return ourStart < slotEnd && ourEnd > slotStart;
+      });
+
+      if (!overlapping) {
+        setScheduleError(slots.length === 0
+          ? "Friend has not set their availability yet. Ask them to add availability in their profile."
+          : "Friend is not available at this time.");
+        setSuggestedSlots(slots.slice(0, 8));
+        setScheduleLoading(false);
+        return;
+      }
+
+      setSuggestedSlots([]);
+      await handleCreateMeeting(
+        id,
+        scheduleFriendId,
+        selectedSlotData.dayOfWeek,
+        selectedSlotData.startTime,
+        selectedSlotData.endTime
+      );
+
+      const friend = friends.find((f) => f.id === Number(scheduleFriendId));
+      alert(`Meeting scheduled with ${friend?.firstName || "friend"}!`);
+
+      const res = await handleGetMeetings(id);
+      const list = res?.data || res;
+      setMeetings(Array.isArray(list) ? list : []);
+
+      setSelectedSlotData(null);
+      setScheduleFriendId("");
     } catch (err) {
-      console.error("Failed to load availability:", err);
-      setAvailableSlots([]);
+      setScheduleError(err?.response?.data?.error || err?.message || "Failed to schedule meeting.");
+    } finally {
+      setScheduleLoading(false);
     }
   };
 
+  const handleCancelMeeting = async (meeting) => {
+    try {
+      const currentUserId = Number(id);
+      const otherUserId =
+        meeting.user1_id === currentUserId ? meeting.user2_id : meeting.user1_id;
 
-  const handleSchedule = () => {
-    if (!selectedFriend || !selectedSlot) return;
+      const ok = window.confirm(
+        `Cancel meeting with ${getFriendName(otherUserId)} on ${
+          meeting.day_of_week
+        } at ${meeting.start_time}?`
+      );
+      if (!ok) return;
 
-    const slot = availableSlots.find(s => String(s.id) === String(selectedSlot));
-    if (!slot) return;
+      await handleDeleteMeeting(
+        meeting.user1_id,
+        meeting.user2_id,
+        meeting.day_of_week,
+        meeting.start_time,
+        meeting.end_time
+      );
 
-    const startRaw =
-      slot.start_time || slot.startTime || slot.start || slot.from;
-
-    const endRaw =
-      slot.end_time || slot.endTime || slot.end || slot.to;
-
-    const dayOfWeek =
-      slot.day_of_week ||
-      new Date(startRaw).toLocaleDateString(undefined, { weekday: "short" });
-
-    handleCreateMeeting(id, selectedFriend.id, dayOfWeek, startRaw, endRaw)
-      .then(() => {
-        alert(`Meeting scheduled with ${selectedFriend.firstName}!`);
-        return handleGetMeetings(id);
-      })
-      .then((res) => {
-        const list = res?.data || res;
-        setMeetings(Array.isArray(list) ? list : []);
-      })
-      .catch((err) => console.error("Meeting creation failed:", err));
+      setMeetings((prev) => prev.filter((m) => m.id !== meeting.id));
+    } catch (err) {
+      console.error('Failed to delete meeting:', err.response?.data || err.message);
+      alert('Failed to delete meeting. Check console for details.');
+    }
   };
 
-const handleCancelMeeting = async (meeting) => {
-  try {
-    const currentUserId = Number(id);
-    const otherUserId =
-      meeting.user1_id === currentUserId ? meeting.user2_id : meeting.user1_id;
-
-    // Optional confirm dialog
-    const ok = window.confirm(
-      `Cancel meeting with ${getFriendName(otherUserId)} on ${
-        meeting.day_of_week
-      } at ${meeting.start_time}?`
-    );
-    if (!ok) return;
-
-    const res = await handleDeleteMeeting(
-      meeting.user1_id,
-      meeting.user2_id,
-      meeting.day_of_week,
-      meeting.start_time,
-      meeting.end_time
-    );
-
-    console.log('Delete meeting response:', res.data);
-
-    // Remove it from local state so UI updates
-    setMeetings((prev) => prev.filter((m) => m.id !== meeting.id));
-
-    alert(`Meeting cancelled with ${getFriendName(otherUserId)}!`);
-  } catch (err) {
-    console.error('Failed to delete meeting:', err.response?.data || err.message);
-    alert('Failed to delete meeting. Check console for details.');
-  }
-};
-
-
   return (
-    <div className="screen-Background">
+    <div className="sched-page">
+      <Navbar id={id} />
 
-      <div className="scheduler-wrapper">
-
-        
-        <div className="scheduled-meetings-box">
-          <h2>Your Scheduled Meetings</h2>
-          {meetings.length > 0 && (
-            <p className="scheduler-subtext">Click on a meeting to delete it</p>
+      <div className="sched-center">
+        <div className="sched-card sched-card-calendar">
+          <h2 className="sched-card-title">Scheduled Meetings</h2>
+          {meetings.length === 0 && !selectedSlotData && (
+            <p className="sched-subtitle">Click an empty time slot to schedule a meeting</p>
           )}
-          {meetings.length === 0 ? (
-            <p>No meetings scheduled.</p>
-          ) : (
-            <ul className="meeting-list">
-              {meetings.map((m) => {
-                const otherUser =
-                  m.user1_id === Number(id) ? m.user2_id : m.user1_id;
 
-                return (
-                  <li  
-                    key={m.id} 
-                    className="meeting-item"
-                    onClick={() => handleCancelMeeting(m)}
-                  >
-                    <strong>With:</strong> {getFriendName(otherUser)} <br />
-                    <strong>Day:</strong> {m.day_of_week} <br />
-                    <strong>Time:</strong> {m.start_time} – {m.end_time}
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-        </div>
-
-        
-        <div className="friends-list-container">
-          <h2>Your Friends List</h2>
-          <p className="instructions">Please Click on a User to Schedule a Meeting</p>
-
-          {friends.length === 0 ? (
-            <p className="no-friends-message">No friends added yet.</p>
-          ) : (
-            <div className="friends-list">
-              {friends.map(friend => (
-                <div
-                  key={friend.id}
-                  className="friend-chip"
-                  onClick={() => handleFriendClick(friend)}
+          {selectedSlotData && (
+            <div className="sched-slot-panel">
+              <div className="sched-slot-panel-header">
+                <span className="sched-slot-panel-title">
+                  Schedule for {formatSlotLabel(selectedSlotData)}
+                </span>
+                <button
+                  type="button"
+                  className="sched-slot-panel-close"
+                  onClick={() => {
+                    setSelectedSlotData(null);
+                    setScheduleFriendId("");
+                    setScheduleError("");
+                    setSuggestedSlots([]);
+                  }}
+                  aria-label="Close"
                 >
-                  {friend.firstName} {friend.lastName}
-                </div>
-              ))}
-            </div>
-          )}
-
-          {selectedFriend && (
-            <div className="scheduler-panel">
-              <h3>
-                Schedule with {selectedFriend.firstName} {selectedFriend.lastName}
-              </h3>
-              
-
-              {availableSlots.length === 0 ? (
-                <p className="no-slots-message">This user has no available time slots.</p>
+                  ×
+                </button>
+              </div>
+              {friends.length === 0 ? (
+                <p className="sched-no-slots">No friends added yet. Add friends first.</p>
               ) : (
                 <>
-                  <label className="dropdown-label">
-                    Choose a time:
+                  <label className="sched-dropdown-label">
+                    With:
                     <select
-                      className="time-dropdown"
-                      value={selectedSlot}
-                      onChange={(e) => setSelectedSlot(e.target.value)}
+                      className="sched-select"
+                      value={scheduleFriendId}
+                      onChange={(e) => {
+                        setScheduleFriendId(e.target.value);
+                        setScheduleError("");
+                      }}
                     >
-                      <option value="">...</option>
-                      {availableSlots.map(slot => {
-                        const startRaw =
-                          slot.start_time || slot.startTime || slot.start || slot.from;
-
-                        const endRaw =
-                          slot.end_time || slot.endTime || slot.end || slot.to;
-
-                        const startDate = new Date(startRaw);
-                        const endDate = new Date(endRaw);
-
-                        if (isNaN(startDate.getTime())) {
-                          return (
-                            <option key={slot.id} value={slot.id}>
-                              {slot.day_of_week ?? "??"} — {String(startRaw)} – {String(endRaw)}
-                            </option>
-                          );
-                        }
-
-                        const weekday = slot.day_of_week ||
-                          startDate.toLocaleDateString(undefined, { weekday: "short" });
-
-                        const startLabel = startDate.toLocaleTimeString(undefined, {
-                          hour: "numeric",
-                          minute: "2-digit",
-                        });
-
-                        const endLabel = endDate.toLocaleTimeString(undefined, {
-                          hour: "numeric",
-                          minute: "2-digit",
-                        });
-
-                        return (
-                          <option key={slot.id} value={slot.id}>
-                            {weekday} — {startLabel} to {endLabel}
-                          </option>
-                        );
-                      })}
+                      <option value="">Select a friend...</option>
+                      {friends.map((f) => (
+                        <option key={f.id} value={f.id}>
+                          {f.firstName} {f.lastName}
+                        </option>
+                      ))}
                     </select>
                   </label>
-
-                  <button
-                    className="btn-confirm"
-                    disabled={!selectedSlot}
-                    onClick={handleSchedule}
-                  >
-                    Confirm Meeting
-                  </button>
+                  {scheduleError && (
+                    <p className="sched-slot-error">{scheduleError}</p>
+                  )}
+                  {suggestedSlots.length > 0 && (
+                    <div className="sched-suggested">
+                      <p className="sched-suggested-title">
+                        {getFriendName(Number(scheduleFriendId))} is available at:
+                      </p>
+                      <div className="sched-suggested-list">
+                        {suggestedSlots.map((s, i) => (
+                          <button
+                            key={i}
+                            type="button"
+                            className="sched-suggested-btn"
+                            onClick={() => {
+                              const slotData = {
+                                dayOfWeek: s.day_of_week || s.day,
+                                startTime: s.start_time || s.startTime || s.start || "00:00:00",
+                                endTime: s.end_time || s.endTime || s.end || "01:00:00",
+                              };
+                              setSelectedSlotData(slotData);
+                              setSuggestedSlots([]);
+                              setScheduleError("");
+                            }}
+                          >
+                            {formatSlotLabel({
+                              dayOfWeek: s.day_of_week || s.day,
+                              startTime: s.start_time || s.startTime || s.start,
+                              endTime: s.end_time || s.endTime || s.end,
+                            })}
+                          </button>
+                        ))}
+                      </div>
+                      <p className="sched-suggested-hint">Click a time to schedule at that slot instead.</p>
+                    </div>
+                  )}
+                  <div className="sched-slot-actions">
+                    <button
+                      type="button"
+                      className="sched-btn-secondary"
+                      onClick={() => {
+                        setSelectedSlotData(null);
+                        setScheduleFriendId("");
+                        setScheduleError("");
+                        setSuggestedSlots([]);
+                      }}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      className="sched-confirm-btn"
+                      disabled={!scheduleFriendId || scheduleLoading}
+                      onClick={handleScheduleFromCalendar}
+                    >
+                      {scheduleLoading ? "Scheduling..." : "Schedule Meeting"}
+                    </button>
+                  </div>
                 </>
               )}
             </div>
           )}
 
-          <div className="button-container">
-            <button className="btn-back-02" onClick={handleBack}>
-              Back
-            </button>
-          </div>
-        </div>
+          <MeetingCalendar
+            meetings={meetings}
+            getFriendName={getFriendName}
+            currentUserId={id}
+            onMeetingClick={handleCancelMeeting}
+            onSlotClick={setSelectedSlotData}
+            friends={friends}
+          />
 
+          <button className="back-to-dashboard" onClick={handleBack}>Dashboard</button>
+        </div>
       </div>
     </div>
   );

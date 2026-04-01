@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import React from "react";
-import './Registration.css';
 import './UpdateProfile.css';
 import Select from "react-select";
+import ProfileImageSection from './ProfileImageSection';
+import Navbar from './NavBar';
 
 import {
   handleProfileUpdateAPI,
@@ -14,10 +15,17 @@ import {
 } from '../Services/userService';
 
 import { handleGetUserProfileApi } from '../Services/findFriendsService';
+import { handleGetUserStatsApi } from '../Services/gameSelectionService';
+import { handleGetUserBadgesApi } from '../Services/badgeService';
+import { getChallengeStats } from '../Services/challengeService';
 import { createSearchParams, useNavigate, useSearchParams } from "react-router-dom";
 
+const selectStyles = {
+  control: (base) => ({ ...base, borderRadius: 6, borderColor: '#d4d4d8', fontSize: 14, fontFamily: "var(--dl-font)" }),
+  option: (base) => ({ ...base, fontSize: 14, fontFamily: "var(--dl-font)" }),
+};
+
 function UpdateProfile() {
-  // Profile fields
   const [nativeLanguage, setNativeLanguage] = useState('');
   const [targetLanguage, setTargetLanguage] = useState('');
   const [targetLanguageProficiency, setTargetLanguageProficiency] = useState('');
@@ -28,482 +36,450 @@ function UpdateProfile() {
   const [zodiac, setZodiac] = useState('');
   const [defaultTimeZone, setDefaultTimeZone] = useState('');
   const [visibility, setVisibility] = useState('');
-
-  // Interests
+  const [learningGoal, setLearningGoal] = useState('');
+  const [communicationStyle, setCommunicationStyle] = useState('');
+  const [commitmentLevel, setCommitmentLevel] = useState(3);
+  const [profileImage, setProfileImage] = useState(null);
+  const [userStats, setUserStats] = useState(null);
+  const [badges, setBadges] = useState([]);
+  const [challengeStats, setChallengeStats] = useState(null);
   const [allInterests, setAllInterests] = useState([]);
   const [selectedInterests, setSelectedInterests] = useState([]);
-
-  // Availability
   const [availability, setAvailability] = useState([]);
-
-  // UI state
   const [errMsg, setErrMsg] = useState('');
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState(false);
+  const [dataLoaded, setDataLoaded] = useState(false);
+  const [step, setStep] = useState(0);
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [showStats, setShowStats] = useState(false);
 
   const [search] = useSearchParams();
   const id = search.get("id");
   const navigate = useNavigate();
 
-  // Options
-  const NativeLanguage = [
-    { value: "English", label: "English" },
-    { value: "Korean", label: "Korean" },
-  ];
-
-  const TargetLanguage = [
-    { value: "English", label: "English" },
-    { value: "Korean", label: "Korean" },
-  ];
-
+  const NativeLanguage = [{ value: "English", label: "English" }, { value: "Korean", label: "Korean" }];
+  const TargetLanguage = [{ value: "English", label: "English" }, { value: "Korean", label: "Korean" }];
   const TargetLanguageProficiency = [
-    { value: "Beginner", label: "Beginner" },
-    { value: "Elementary", label: "Elementary" },
-    { value: "Intermediate", label: "Intermediate" },
-    { value: "Proficient", label: "Proficient" },
+    { value: "Beginner", label: "Beginner" }, { value: "Elementary", label: "Elementary" },
+    { value: "Intermediate", label: "Intermediate" }, { value: "Proficient", label: "Proficient" },
     { value: "Fluent", label: "Fluent" },
   ];
-
-  const Gender = [
-    { value: "Male", label: "Male" },
-    { value: "Female", label: "Female" },
-    { value: "Other", label: "Other" },
-  ];
-
-  // Keeping spelling as-is to match existing DB strings if any
+  const Gender = [{ value: "Male", label: "Male" }, { value: "Female", label: "Female" }, { value: "Other", label: "Other" }];
   const Profession = [
-    { value: "Education", label: "Education" },
-    { value: "Engineering", label: "Engineering" },
-    { value: "Retail", label: "Retail" },
-    { value: "Finance", label: "Finance" },
-    { value: "Law", label: "Law" },
-    { value: "Medicine", label: "Medicine" },
+    { value: "Education", label: "Education" }, { value: "Engineering", label: "Engineering" },
+    { value: "Retail", label: "Retail" }, { value: "Finance", label: "Finance" },
+    { value: "Law", label: "Law" }, { value: "Medicine", label: "Medicine" },
     { value: "Scientist", label: "Scientist" },
   ];
-
   const Zodiac = [
-    { value: "Aries", label: "Aries" },
-    { value: "Taurus", label: "Taurus" },
-    { value: "Gemini", label: "Gemini" },
-    { value: "Cancer", label: "Cancer" },
-    { value: "Leo", label: "Leo" },
-    { value: "Virgo", label: "Virgo" },
-    { value: "Libra", label: "Libra" },
-    { value: "Scorpio", label: "Scorpio" },
-    { value: "Sagittarius", label: "Sagittarius" },
-    { value: "Capricorn", label: "Capricorn" },
-    { value: "Aquarius", label: "Aquarius" },
-    { value: "Pisces", label: "Pisces" },
+    { value: "Aries", label: "Aries" }, { value: "Taurus", label: "Taurus" },
+    { value: "Gemini", label: "Gemini" }, { value: "Cancer", label: "Cancer" },
+    { value: "Leo", label: "Leo" }, { value: "Virgo", label: "Virgo" },
+    { value: "Libra", label: "Libra" }, { value: "Scorpio", label: "Scorpio" },
+    { value: "Sagittarius", label: "Sagittarius" }, { value: "Capricorn", label: "Capricorn" },
+    { value: "Aquarius", label: "Aquarius" }, { value: "Pisces", label: "Pisces" },
   ];
-
   const TimeZones = [
-    { value: "UTC", label: "UTC" },
-    { value: "America/New_York", label: "America/New_York" },
-    { value: "America/Chicago", label: "America/Chicago" },
-    { value: "America/Denver", label: "America/Denver" },
-    { value: "America/Los_Angeles", label: "America/Los_Angeles" },
-    { value: "Europe/London", label: "Europe/London" },
-    { value: "Europe/Paris", label: "Europe/Paris" },
-    { value: "Asia/Seoul", label: "Asia/Seoul" },
-    { value: "Asia/Tokyo", label: "Asia/Tokyo" },
+    { value: "UTC", label: "UTC" }, { value: "America/New_York", label: "Eastern (New York)" },
+    { value: "America/Chicago", label: "Central (Chicago)" }, { value: "America/Denver", label: "Mountain (Denver)" },
+    { value: "America/Los_Angeles", label: "Pacific (LA)" }, { value: "Europe/London", label: "London" },
+    { value: "Europe/Paris", label: "Paris" }, { value: "Asia/Seoul", label: "Seoul" },
+    { value: "Asia/Tokyo", label: "Tokyo" },
   ];
-
   const MBTI = [
-    { value: "INTJ", label: "INTJ" },
-    { value: "INTP", label: "INTP" },
-    { value: "ENTJ", label: "ENTJ" },
-    { value: "ENTP", label: "ENTP" },
-    { value: "INFJ", label: "INFJ" },
-    { value: "INFP", label: "INFP" },
-    { value: "ENFJ", label: "ENFJ" },
-    { value: "ENFP", label: "ENFP" },
-    { value: "ISTJ", label: "ISTJ" },
-    { value: "ISFJ", label: "ISFJ" },
-    { value: "ESTJ", label: "ESTJ" },
-    { value: "ESFJ", label: "ESFJ" },
-    { value: "ISTP", label: "ISTP" },
-    { value: "ISFP", label: "ISFP" },
-    { value: "ESTP", label: "ESTP" },
-    { value: "ESFP", label: "ESFP" },
+    { value: "INTJ", label: "INTJ" }, { value: "INTP", label: "INTP" },
+    { value: "ENTJ", label: "ENTJ" }, { value: "ENTP", label: "ENTP" },
+    { value: "INFJ", label: "INFJ" }, { value: "INFP", label: "INFP" },
+    { value: "ENFJ", label: "ENFJ" }, { value: "ENFP", label: "ENFP" },
+    { value: "ISTJ", label: "ISTJ" }, { value: "ISFJ", label: "ISFJ" },
+    { value: "ESTJ", label: "ESTJ" }, { value: "ESFJ", label: "ESFJ" },
+    { value: "ISTP", label: "ISTP" }, { value: "ISFP", label: "ISFP" },
+    { value: "ESTP", label: "ESTP" }, { value: "ESFP", label: "ESFP" },
+  ];
+  const VisibilityOptions = [{ value: "Show", label: "Show" }, { value: "Hide", label: "Hide" }];
+  const LearningGoalOptions = [
+    { value: "Conversational fluency", label: "Conversational fluency" },
+    { value: "Business/Professional", label: "Business/Professional" },
+    { value: "Travel preparation", label: "Travel preparation" },
+    { value: "Academic study", label: "Academic study" },
+    { value: "Cultural appreciation", label: "Cultural appreciation" },
+    { value: "K-pop/K-drama fan", label: "K-pop/K-drama fan" },
+  ];
+  const CommunicationStyleOptions = [
+    { value: "Text-heavy", label: "Text-heavy" },
+    { value: "Voice/Video preferred", label: "Voice/Video preferred" },
+    { value: "Mixed", label: "Mixed" },
+    { value: "Casual/Fun", label: "Casual/Fun" },
+    { value: "Structured/Formal", label: "Structured/Formal" },
   ];
 
-  const VisibilityOptions = [
-    { value: "Show", label: "Show" },
-    { value: "Hide", label: "Hide" },
-  ];
-
-  // Availability options builder (same pattern as CreateProfile)
   const generateHourlySlots = (day) => {
     const slots = [];
     for (let hour = 8; hour < 21; hour++) {
       const start = String(hour).padStart(2, '0') + ':00';
-      const end = String(hour + 1).padStart(2, '0') + ':00';
-
-      const formatHour = (h) => {
-        const suffix = h >= 12 ? 'pm' : 'am';
-        const display = ((h + 11) % 12 + 1);
-        return `${display}${suffix}`;
-      };
-
-      const label = `${day} ${formatHour(hour)}-${formatHour(hour + 1)}`;
-
-      slots.push({
-        value: { day_of_week: day, start_time: start, end_time: end },
-        label,
-      });
+      const end   = String(hour + 1).padStart(2, '0') + ':00';
+      const fmt   = (h) => `${((h + 11) % 12 + 1)}${h >= 12 ? 'pm' : 'am'}`;
+      slots.push({ value: { day_of_week: day, start_time: start, end_time: end }, label: `${day} ${fmt(hour)}-${fmt(hour + 1)}` });
     }
     return slots;
   };
-
-  const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+  const days = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
   const availabilityOptions = days.flatMap(generateHourlySlots);
-
   const pickSingle = (options, value) => options.find(o => o.value === value) || null;
 
-  // Fetch all interests (for options)
-  useEffect(() => {
-    const fetchInterests = async () => {
-      try {
-        const response = await handleGetAllInterests();
-        const interestArray = Array.isArray(response?.data) ? response.data : (Array.isArray(response) ? response : []);
-        const formatted = interestArray.map(i => ({
-          value: i.id,
-          label: i.interest_name
-        }));
-        setAllInterests(formatted);
-      } catch (err) {
-        console.error('Failed to fetch interests:', err);
-      }
-    };
-    fetchInterests();
-  }, []);
-
-  // Fetch profile core fields
   useEffect(() => {
     if (!id) return;
 
-    const fetchProfile = async () => {
+    const loadAllData = async () => {
       try {
-        const res = await handleGetUserProfileApi(id);
-        const profile = res?.data?.data ?? res?.data ?? res;
+        const [profileRes, userStatsRes, interestsAllRes, interestsUserRes, availabilityRes] = await Promise.allSettled([
+          handleGetUserProfileApi(id),
+          handleGetUserStatsApi(id),
+          handleGetAllInterests(),
+          handleGetUserInterests(id),
+          handleGetUserAvailability(id),
+        ]);
 
-        if (profile) {
-          setNativeLanguage(profile.native_language ?? '');
-          setTargetLanguage(profile.target_language ?? '');
-          setTargetLanguageProficiency(profile.target_language_proficiency ?? '');
-          setAge(profile.age ?? '');
-          setGender(profile.gender ?? '');
-          setProfession(profile.profession ?? '');
-          setMBTI(profile.mbti ?? '');
-          setZodiac(profile.zodiac ?? '');
-          setDefaultTimeZone(profile.default_time_zone ?? '');
-          setVisibility(profile.visibility ?? '');
+        if (profileRes.status === 'fulfilled') {
+          const raw = profileRes.value;
+          const profile = raw?.data ?? raw;
+          if (profile) {
+            if (profile.native_language)              setNativeLanguage(profile.native_language);
+            if (profile.target_language)              setTargetLanguage(profile.target_language);
+            if (profile.target_language_proficiency)  setTargetLanguageProficiency(profile.target_language_proficiency);
+            if (profile.age)                          setAge(profile.age);
+            if (profile.gender)                       setGender(profile.gender);
+            if (profile.profession)                   setProfession(profile.profession);
+            if (profile.mbti)                         setMBTI(profile.mbti);
+            if (profile.zodiac)                       setZodiac(profile.zodiac);
+            if (profile.default_time_zone)            setDefaultTimeZone(profile.default_time_zone);
+            if (profile.visibility)                   setVisibility(profile.visibility);
+            if (profile.learning_goal)                setLearningGoal(profile.learning_goal);
+            if (profile.communication_style)          setCommunicationStyle(profile.communication_style);
+            if (profile.commitment_level)             setCommitmentLevel(profile.commitment_level);
+          }
+        }
+
+        if (userStatsRes.status === 'fulfilled') {
+          setUserStats(userStatsRes.value);
+          if (userStatsRes.value?.profileImage) setProfileImage(userStatsRes.value.profileImage);
+        }
+
+        try {
+          const [badgeRes, challengeStatsRes] = await Promise.allSettled([
+            handleGetUserBadgesApi(id),
+            getChallengeStats(id),
+          ]);
+          if (badgeRes.status === 'fulfilled') setBadges(badgeRes.value?.badges || []);
+          if (challengeStatsRes.status === 'fulfilled') setChallengeStats(challengeStatsRes.value);
+        } catch {}
+
+        if (interestsAllRes.status === 'fulfilled') {
+          const raw = interestsAllRes.value;
+          const arr = Array.isArray(raw?.data) ? raw.data : Array.isArray(raw) ? raw : [];
+          setAllInterests(arr.map(i => ({ value: i.id, label: i.interest_name })));
+        }
+
+        if (interestsUserRes.status === 'fulfilled') {
+          const raw = interestsUserRes.value;
+          const arr = Array.isArray(raw?.data) ? raw.data : Array.isArray(raw) ? raw : [];
+          setSelectedInterests(arr.map(i => ({ value: i.id, label: i.interest_name })));
+        }
+
+        if (availabilityRes.status === 'fulfilled') {
+          const raw = availabilityRes.value;
+          const slots = Array.isArray(raw?.data) ? raw.data : Array.isArray(raw) ? raw : [];
+          setAvailability(slots.map(s => {
+            const match = availabilityOptions.find(o =>
+              o.value.day_of_week === s.day_of_week &&
+              o.value.start_time === s.start_time &&
+              o.value.end_time === s.end_time
+            );
+            return match || {
+              value: { day_of_week: s.day_of_week, start_time: s.start_time, end_time: s.end_time },
+              label: `${s.day_of_week} ${s.start_time}-${s.end_time}`
+            };
+          }));
         }
       } catch (err) {
-        console.error('Failed to fetch user profile:', err);
+        console.error('Unexpected error loading profile data:', err);
+      } finally {
+        setDataLoaded(true);
       }
     };
 
-    fetchProfile();
+    loadAllData();
   }, [id]);
 
-  // Fetch user interests and preload selections
-  useEffect(() => {
-    if (!id) return;
-
-    const fetchUserInterests = async () => {
-      try {
-        const res = await handleGetUserInterests(id);
-        const interestArray = Array.isArray(res?.data) ? res.data : (Array.isArray(res) ? res : []);
-        const formatted = interestArray.map(i => ({
-          value: i.id,
-          label: i.interest_name
-        }));
-        setSelectedInterests(formatted);
-      } catch (err) {
-        console.error('Failed to fetch user interests:', err);
-      }
-    };
-
-    fetchUserInterests();
-  }, [id]);
-
-  // Fetch user availability and preload selections
-  useEffect(() => {
-    if (!id) return;
-
-    const fetchAvailability = async () => {
-      try {
-        const res = await handleGetUserAvailability(id);
-        const slots = Array.isArray(res?.data) ? res.data : (Array.isArray(res) ? res : []);
-
-        const mapped = slots.map(s => {
-          const day = s.day_of_week;
-          const start = s.start_time;
-          const end = s.end_time;
-
-          const match = availabilityOptions.find(o =>
-            o.value.day_of_week === day &&
-            o.value.start_time === start &&
-            o.value.end_time === end
-          );
-
-          return match || {
-            value: { day_of_week: day, start_time: start, end_time: end },
-            label: `${day} ${start}-${end}`
-          };
-        });
-
-        setAvailability(mapped);
-      } catch (err) {
-        console.error('Failed to fetch user availability:', err);
-      }
-    };
-
-    fetchAvailability();
-  }, [id]); // availabilityOptions is stable enough for this use case
-
-  // Handlers
-  const handleNativeLanguage = (selectedOption) => setNativeLanguage(selectedOption?.value ?? '');
-  const handleTargetLanguage = (selectedOption) => setTargetLanguage(selectedOption?.value ?? '');
-  const handleTargetLanguageProficiency = (selectedOption) => setTargetLanguageProficiency(selectedOption?.value ?? '');
-  const handleAge = (e) => setAge(e.target.value);
-  const handleGender = (selectedOption) => setGender(selectedOption?.value ?? '');
-  const handleProfession = (selectedOption) => setProfession(selectedOption?.value ?? '');
-  const handleZodiac = (selectedOption) => setZodiac(selectedOption?.value ?? '');
-  const handleMBTI = (selectedOption) => setMBTI(selectedOption?.value ?? '');
-  const handleInterestsChange = (selectedOptions) => setSelectedInterests(selectedOptions || []);
-  const handleDefaultTimeZone = (selectedOption) => setDefaultTimeZone(selectedOption?.value ?? '');
-  const handleAvailability = (selectedOptions) => setAvailability(selectedOptions || []);
-  const handleVisibility = (selectedOption) => setVisibility(selectedOption?.value ?? '');
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleSubmit = async () => {
     setErrMsg('');
-
-    if (
-      nativeLanguage === '' ||
-      targetLanguage === '' ||
-      targetLanguageProficiency === '' ||
-      age === '' ||
-      profession === ''
-    ) {
-      setError(true);
-      return;
-    }
-
-    setSubmitted(true);
-    setError(false);
-
+    setSubmitted(true); setError(false);
     try {
-      await handleProfileUpdateAPI(
-        id,
-        nativeLanguage,
-        targetLanguage,
-        targetLanguageProficiency,
-        age,
-        gender,
-        profession,
-        mbti,
-        zodiac,
-        defaultTimeZone,
-        visibility
-      );
-
-      // Replace interests to reflect edits (including clearing)
-      const interestIds = selectedInterests.map(i => i.value);
-      await handleReplaceUserInterests(id, interestIds);
-
-      // Replace availability to reflect edits (including clearing)
-      const slots = availability.map(a => a.value);
-      await handleReplaceUserAvailability(id, slots);
-
-      navigate({
-        pathname: "/Dashboard",
-        search: createSearchParams({ id }).toString()
-      });
+      await handleProfileUpdateAPI(id, nativeLanguage, targetLanguage, targetLanguageProficiency, age, gender, profession, mbti, zodiac, defaultTimeZone, visibility, learningGoal, communicationStyle, commitmentLevel);
+      await handleReplaceUserInterests(id, selectedInterests.map(i => i.value));
+      await handleReplaceUserAvailability(id, availability.map(a => a.value));
+      navigate({ pathname: "/Dashboard", search: createSearchParams({ id }).toString() });
     } catch (err) {
-      if (err?.response?.data?.message) {
-        setErrMsg(err.response.data.message);
-      } else {
-        setErrMsg("Failed to update profile.");
-      }
+      setErrMsg(err?.response?.data?.message || "Failed to update profile.");
       console.error(err);
     }
   };
 
-  const handleBack = (e) => {
-    e.preventDefault();
-    navigate({
-      pathname: "/Dashboard",
-      search: createSearchParams({ id }).toString()
-    });
+  const handleBack = () => {
+    navigate({ pathname: "/Dashboard", search: createSearchParams({ id }).toString() });
   };
 
-  const successMessage = () => (
-    <div
-      className="success"
-      style={{ display: submitted ? '' : 'none' }}
-    >
-      <h1> Updated</h1>
-    </div>
-  );
+  const STEPS = [
+    { title: 'Basics', subtitle: 'Pick your languages + level' },
+    { title: 'About you', subtitle: 'A few quick details' },
+    { title: 'Schedule', subtitle: 'Timezone + when you\'re free' },
+    { title: 'Style', subtitle: 'How you like to learn' },
+  ];
 
-  const errorMessage = () => (
-    <div
-      className="error"
-      style={{ display: error ? '' : 'none' }}
-    >
-      <h1>enter required fields</h1>
-    </div>
-  );
+  const stepRequiredFields = {
+    0: [nativeLanguage, targetLanguage, targetLanguageProficiency],
+    1: [age, profession],
+  };
+
+  const handleNext = () => {
+    const required = stepRequiredFields[step];
+    if (required && required.some(v => !v)) {
+      setError(true);
+      return;
+    }
+    setError(false);
+    setStep(s => Math.min(s + 1, STEPS.length - 1));
+  };
+
+  const prevStep = () => { setError(false); setStep(s => Math.max(s - 1, 0)); };
+  const progressPct = Math.round(((step + 1) / STEPS.length) * 100);
+
+  if (!dataLoaded) {
+    return (
+      <div className="up-page">
+        <Navbar id={id} />
+        <div className="up-center">
+          <div className="up-card" style={{ textAlign: 'center', padding: 60 }}>
+            <p style={{ color: '#364659', fontFamily: 'var(--dl-font)', fontSize: 18 }}>Loading your profile...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="set-profile-wrapper">
-      <div className="set-profile-card">
+    <div className="up-page">
+      <Navbar id={id} />
+      <div className="up-center">
+        <div className="up-card">
+          <div className="up-header">
+            <div>
+              <h1 className="up-title">Edit Profile</h1>
+              <p className="up-subtitle">Update your profile details anytime.</p>
+            </div>
+            <div className="up-progress">
+              <div className="up-progress-top">
+                <span className="up-progress-step">{STEPS[step].title}</span>
+                <span className="up-progress-pct">{progressPct}%</span>
+              </div>
+              <div className="up-progress-track">
+                <div className="up-progress-fill" style={{ width: `${progressPct}%` }} />
+              </div>
+              <div className="up-progress-sub">{STEPS[step].subtitle}</div>
+            </div>
+          </div>
 
-        <h1>Set Profile</h1>
-        <h6>(* indicates required fields)</h6>
+          <div className="up-messages">
+            {error && <div className="up-error">Please enter all required fields.</div>}
+            {submitted && !errMsg && <div className="up-success">Profile updated successfully!</div>}
+            {errMsg && <div className="up-error">{errMsg}</div>}
+          </div>
 
-        <div className="messages">
-          {errorMessage()}
-          {successMessage()}
-          {errMsg ? <div className="error"><h1>{errMsg}</h1></div> : null}
+          <form className="up-form" onSubmit={(e) => e.preventDefault()}>
+
+            <div className="up-group">
+              <ProfileImageSection id={id} currentImage={profileImage} onImageChange={(path) => setProfileImage(path)} />
+            </div>
+
+            {/* Step content */}
+            {step === 0 && (
+              <div className="up-step">
+                <div className="up-step-grid">
+                  <div className="up-group">
+                    <label className="up-label">Native Language *</label>
+                    <Select styles={selectStyles} options={NativeLanguage} onChange={s => setNativeLanguage(s?.value ?? '')} value={pickSingle(NativeLanguage, nativeLanguage)} />
+                  </div>
+                  <div className="up-group">
+                    <label className="up-label">Target Language *</label>
+                    <Select styles={selectStyles} options={TargetLanguage} onChange={s => setTargetLanguage(s?.value ?? '')} value={pickSingle(TargetLanguage, targetLanguage)} />
+                  </div>
+                  <div className="up-group">
+                    <label className="up-label">Proficiency Level *</label>
+                    <Select styles={selectStyles} options={TargetLanguageProficiency} onChange={s => setTargetLanguageProficiency(s?.value ?? '')} value={pickSingle(TargetLanguageProficiency, targetLanguageProficiency)} />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {step === 1 && (
+              <div className="up-step">
+                <div className="up-step-grid">
+                  <div className="up-group">
+                    <label className="up-label">Age *</label>
+                    <input placeholder="Enter age" onChange={e => setAge(e.target.value)} className="up-input" type="text" value={age} />
+                  </div>
+                  <div className="up-group">
+                    <label className="up-label">Profession *</label>
+                    <Select styles={selectStyles} options={Profession} onChange={s => setProfession(s?.value ?? '')} value={pickSingle(Profession, profession)} />
+                  </div>
+                </div>
+
+                <button className="up-accordion" type="button" onClick={() => setShowAdvanced(v => !v)}>
+                  {showAdvanced ? 'Hide extra details' : 'Add extra details (optional)'}
+                </button>
+
+                {showAdvanced && (
+                  <div className="up-step-grid">
+                    <div className="up-group">
+                      <label className="up-label">Gender</label>
+                      <Select styles={selectStyles} options={Gender} onChange={s => setGender(s?.value ?? '')} value={pickSingle(Gender, gender)} />
+                    </div>
+                    <div className="up-group">
+                      <label className="up-label">Personality Type (MBTI)</label>
+                      <Select styles={selectStyles} options={MBTI} onChange={s => setMBTI(s?.value ?? '')} value={pickSingle(MBTI, mbti)} />
+                    </div>
+                    <div className="up-group">
+                      <label className="up-label">Zodiac</label>
+                      <Select styles={selectStyles} options={Zodiac} onChange={s => setZodiac(s?.value ?? '')} value={pickSingle(Zodiac, zodiac)} />
+                    </div>
+                    <div className="up-group" style={{ gridColumn: '1 / -1' }}>
+                      <label className="up-label">Interests</label>
+                      <Select styles={selectStyles} isMulti options={allInterests} onChange={s => setSelectedInterests(s || [])} value={selectedInterests} />
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {step === 2 && (
+              <div className="up-step">
+                <div className="up-step-grid">
+                  <div className="up-group">
+                    <label className="up-label">Time Zone</label>
+                    <Select styles={selectStyles} options={TimeZones} onChange={s => setDefaultTimeZone(s?.value ?? '')} value={pickSingle(TimeZones, defaultTimeZone)} />
+                  </div>
+                  <div className="up-group">
+                    <label className="up-label">Profile Visibility</label>
+                    <Select styles={selectStyles} options={VisibilityOptions} onChange={s => setVisibility(s?.value ?? '')} value={pickSingle(VisibilityOptions, visibility)} />
+                  </div>
+                  <div className="up-group" style={{ gridColumn: '1 / -1' }}>
+                    <label className="up-label">Availability</label>
+                    <Select styles={selectStyles} isMulti options={availabilityOptions} value={availability} onChange={s => setAvailability(s || [])} placeholder="Pick a few times you're usually free..." />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {step === 3 && (
+              <div className="up-step">
+                <div className="up-step-grid">
+                  <div className="up-group">
+                    <label className="up-label">Learning Goal</label>
+                    <Select styles={selectStyles} options={LearningGoalOptions} onChange={s => setLearningGoal(s?.value ?? '')} value={pickSingle(LearningGoalOptions, learningGoal)} />
+                  </div>
+                  <div className="up-group">
+                    <label className="up-label">Communication Style</label>
+                    <Select styles={selectStyles} options={CommunicationStyleOptions} onChange={s => setCommunicationStyle(s?.value ?? '')} value={pickSingle(CommunicationStyleOptions, communicationStyle)} />
+                  </div>
+                  <div className="up-group" style={{ gridColumn: '1 / -1' }}>
+                    <label className="up-label">Commitment Level</label>
+                    <div className="up-stars">
+                      {[1, 2, 3, 4, 5].map(n => (
+                        <span
+                          key={n}
+                          className={`up-star ${n <= commitmentLevel ? 'up-star-active' : 'up-star-inactive'}`}
+                          onClick={() => setCommitmentLevel(n)}
+                        >
+                          &#9733;
+                        </span>
+                      ))}
+                    </div>
+                    <div className="up-hint">Tip: 3 is casual, 5 is very committed.</div>
+                  </div>
+                </div>
+
+                {(userStats || badges.length > 0 || challengeStats) && (
+                  <button className="up-accordion" type="button" onClick={() => setShowStats(v => !v)}>
+                    {showStats ? 'Hide my stats' : 'Show my stats'}
+                  </button>
+                )}
+
+                {showStats && (userStats || badges.length > 0 || challengeStats) && (
+                  <div className="up-stats-wrap">
+                    {userStats && (
+                      <div className="up-stats-grid">
+                        <div className="up-stat-card">
+                          <div className="up-stat-val">{userStats.level || 1}</div>
+                          <div className="up-stat-label">Level</div>
+                        </div>
+                        <div className="up-stat-card">
+                          <div className="up-stat-val">{userStats.xp || 0}</div>
+                          <div className="up-stat-label">XP</div>
+                        </div>
+                        {challengeStats && (
+                          <>
+                            <div className="up-stat-card">
+                              <div className="up-stat-val">{challengeStats.wins || 0}</div>
+                              <div className="up-stat-label">Challenge Wins</div>
+                            </div>
+                            <div className="up-stat-card">
+                              <div className="up-stat-val">{challengeStats.winRate || 0}%</div>
+                              <div className="up-stat-label">Win Rate</div>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    )}
+
+                    {badges.length > 0 && (
+                      <div>
+                        <label className="up-label" style={{ margin: '12px 0 6px' }}>Badges Earned</label>
+                        <div className="up-badge-list">
+                          {badges.map(b => (
+                            <span key={b.id} className="up-badge-chip" title={b.description}>
+                              {b.name}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
+            <div className="up-wizard-footer">
+              <button
+                className={step === 0 ? 'back-to-dashboard' : 'up-btn-secondary'}
+                type="button"
+                onClick={step === 0 ? handleBack : prevStep}
+              >
+                {step === 0 ? 'Dashboard' : 'Back'}
+              </button>
+
+              {step < STEPS.length - 1 ? (
+                <button className="up-btn-primary" type="button" onClick={handleNext}>
+                  Continue
+                </button>
+              ) : (
+                <button className="up-btn-primary" type="button" onClick={handleSubmit}>
+                  Save & Finish
+                </button>
+              )}
+            </div>
+          </form>
         </div>
-
-        <form className="set-profile-form">
-
-          <div className='form-group'>
-            <label className="label">Native Language*</label>
-            <Select
-              options={NativeLanguage}
-              onChange={handleNativeLanguage}
-              value={pickSingle(NativeLanguage, nativeLanguage)}
-            />
-          </div>
-
-          <div className='form-group'>
-            <label className="label">Target Language*</label>
-            <Select
-              options={TargetLanguage}
-              onChange={handleTargetLanguage}
-              value={pickSingle(TargetLanguage, targetLanguage)}
-            />
-          </div>
-
-          <div className='form-group'>
-            <label className="label">Level of Target Language*</label>
-            <Select
-              options={TargetLanguageProficiency}
-              onChange={handleTargetLanguageProficiency}
-              value={pickSingle(TargetLanguageProficiency, targetLanguageProficiency)}
-            />
-          </div>
-
-          <div className='form-group'>
-            <label className="label">Age*</label>
-            <input
-              placeholder="Enter Age"
-              onChange={handleAge}
-              className="input"
-              type="text"
-              value={age}
-            />
-          </div>
-
-          <div className='form-group'>
-            <label className="label">Gender</label>
-            <Select
-              options={Gender}
-              onChange={handleGender}
-              value={pickSingle(Gender, gender)}
-            />
-          </div>
-
-          <div className='form-group'>
-            <label className="label">Profession*</label>
-            <Select
-              options={Profession}
-              onChange={handleProfession}
-              value={pickSingle(Profession, profession)}
-            />
-          </div>
-
-          <div className='form-group'>
-            <label className="label">Personality Type</label>
-            <Select
-              options={MBTI}
-              onChange={handleMBTI}
-              value={pickSingle(MBTI, mbti)}
-            />
-          </div>
-
-          <div className='form-group'>
-            <label className="label">Zodiac</label>
-            <Select
-              options={Zodiac}
-              onChange={handleZodiac}
-              value={pickSingle(Zodiac, zodiac)}
-            />
-          </div>
-
-          <div className='form-group'>
-            <label className="label">Interests</label>
-            <Select
-              isMulti
-              options={allInterests}
-              onChange={handleInterestsChange}
-              value={selectedInterests}
-            />
-          </div>
-
-          <div className='form-group'>
-            <label className="label">Default Time Zone</label>
-            <Select
-              options={TimeZones}
-              onChange={handleDefaultTimeZone}
-              value={pickSingle(TimeZones, defaultTimeZone)}
-            />
-          </div>
-
-          <div className='form-group'>
-            <label className="label">Availability</label>
-            <Select
-              isMulti
-              options={availabilityOptions}
-              value={availability}
-              onChange={handleAvailability}
-            />
-          </div>
-
-          <div className='form-group'>
-            <label className="label">Visibility</label>
-            <Select
-              options={VisibilityOptions}
-              onChange={handleVisibility}
-              value={pickSingle(VisibilityOptions, visibility)}
-            />
-          </div>
-
-          <div className="profile-buttons">
-            <button
-              className="btn-back-02"
-              type="button"
-              onClick={handleSubmit}
-            >
-              Update Profile
-            </button>
-            <button
-              className="btn-back-02"
-              type="button"
-              onClick={handleBack}
-            >
-              Back
-            </button>
-          </div>
-
-        </form>
-
       </div>
     </div>
   );

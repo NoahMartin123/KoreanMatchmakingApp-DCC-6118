@@ -112,7 +112,7 @@ const Chat = () => {
             </div>
 
             <div>
-            <Button className="btn-help" onClick={handleBack}>Back</Button>
+            <button className="back-to-dashboard" onClick={handleBack}>Dashboard</button>
             </div>
         </div>
     );

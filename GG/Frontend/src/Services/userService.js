@@ -16,8 +16,8 @@ const handleProfileCreationAPI = (id, native_language, target_language, target_l
     return axios.post('/CreateProfile', {id: id, native_language: native_language, target_language: target_language, target_language_proficiency: target_language_proficiency, age: age, gender: gender, profession: profession, mbti: mbti, zodiac: zodiac, default_time_zone: default_time_zone, visibility: visibility}) ;
 }
 
-const handleProfileUpdateAPI = (id, native_language, target_language, target_language_proficiency, age, gender, profession, mbti, zodiac, default_time_zone, visibility) => {
-    return axios.put('/UpdateProfile', {id: id, native_language: native_language, target_language: target_language, target_language_proficiency: target_language_proficiency, age: age, gender: gender, profession: profession, mbti: mbti, zodiac: zodiac, default_time_zone: default_time_zone, visibility: visibility}) ;
+const handleProfileUpdateAPI = (id, native_language, target_language, target_language_proficiency, age, gender, profession, mbti, zodiac, default_time_zone, visibility, learning_goal, communication_style, commitment_level) => {
+    return axios.put('/UpdateProfile', {id, native_language, target_language, target_language_proficiency, age, gender, profession, mbti, zodiac, default_time_zone, visibility, learning_goal, communication_style, commitment_level}) ;
 }
 
 //return
@@ -131,6 +131,22 @@ const handleReplaceUserAvailability = (userId, slots) => {
 export const handleAddTrueFriend = (userId1, userId2) => {
   return axios.post('/api/v1/addTrueFriend', { userId1, userId2 });
 };
+
+export const handleGetFriendRequests = async (userId) => {
+  return axios.get(`/api/v1/friendRequests/${userId}`);
+};
+
+export const handleAcceptFriendRequest = async (requestId, userId) => {
+  return axios.put(`/api/v1/friendRequests/${requestId}/accept`, { userId });
+};
+
+export const handleRejectFriendRequest = async (requestId, userId) => {
+  return axios.put(`/api/v1/friendRequests/${requestId}/reject`, { userId });
+};
+
+// Aliases for newer UI components (requestId-based flow).
+export const handleAcceptFriendRequestByRequestId = handleAcceptFriendRequest;
+export const handleRejectFriendRequestByRequestId = handleRejectFriendRequest;
 
 export const handleRemoveTrueFriend = async (userId1, userId2) => {
   const { data } = await axios.delete('/api/v1/removeTrueFriend', {

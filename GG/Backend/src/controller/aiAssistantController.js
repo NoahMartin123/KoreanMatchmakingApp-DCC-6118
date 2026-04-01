@@ -6,7 +6,12 @@ import dotenv from "dotenv";
 import fs from "fs";
 dotenv.config();
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+const GEMINI_KEY = process.env.GEMINI_API_KEY;
+if (!GEMINI_KEY || GEMINI_KEY === "your_gemini_api_key_here") {
+  console.warn("[AI Assistant] GEMINI_API_KEY is missing or placeholder. Chat Assistant will not work. Add your key to GG/Backend/.env (see .env.example)");
+}
+
+const genAI = new GoogleGenerativeAI(GEMINI_KEY || "placeholder");
 const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
 
 
@@ -351,6 +356,11 @@ async function extractChatId(userMessage) {
 
 export async function chatWithAssistant(req, res) {
   try {
+    if (!GEMINI_KEY || GEMINI_KEY === "your_gemini_api_key_here") {
+      return res.status(503).json({
+        error: "Chat Assistant is not configured. Add GEMINI_API_KEY to GG/Backend/.env (see .env.example). Get a key at https://aistudio.google.com/apikey",
+      });
+    }
     const { message, userId, chatId } = req.body;
     console.log(req.body);
     const audioFile = req.file;
@@ -457,7 +467,9 @@ export async function chatWithAssistant(req, res) {
         .map((msg) => `${msg.role === "user" ? "User" : "Assistant"}: ${msg.content}`)
         .join("\n");
         
-      const systemInstruction = `You are a helpful AI assistant for a language exchange app, where students learning a foreign language are able to practice speaking with students who are native speakers, and both students are able to learn from eath other. Help users find practice partners, answer questions about language learning, summarize their practice sessions, and assist with translation.`;
+      const systemInstruction = `You are a helpful AI assistant for a language exchange app, where students learning a foreign language are able to practice speaking with students who are native speakers, and both students are able to learn from each other. Help users find practice partners, answer questions about language learning, summarize their practice sessions, and assist with translation.
+
+When giving longer responses, use markdown formatting for clarity: use **bold** for emphasis, and bullet points (- item) for lists. Keep responses concise but friendly.`;
 
       const historyForModel = formatHistory(
         conversation.messages.slice(0, -1).slice(-10) // up to the last 10 messages before current

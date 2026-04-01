@@ -18,6 +18,26 @@ export default (sequelize, DataTypes) => {
     firstName: DataTypes.STRING,
     lastName: DataTypes.STRING,
     loggedIn: DataTypes.BOOLEAN,
+    xp: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 0,
+    },
+    level: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 1,
+    },
+    gameStats: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+      defaultValue: null,
+    },
+    profileImage: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      defaultValue: null,
+    },
   }, {
     sequelize,
     modelName: 'UserAccount',

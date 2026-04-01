@@ -1,112 +1,111 @@
-/* Reset just what we need here to avoid spilling onto other pages */
-.video-call-container {
-  background: #fff;
+/* Google Meet–style Call page */
+.vc-page {
   min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 32px 16px;
-  position: relative;
-}
-
-/* Home button placement */
-.vc-home-btn-wrap {
-  position: absolute;
-  top: 12px;
-  left: 12px;
-  z-index: 1000;
-}
-
-/* Card layout for a clean, intuitive join flow */
-.join-card {
-  width: 100%;
-  max-width: 560px;
-  background: #ffffff;
-  border-radius: 16px;
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
-  padding: 24px 24px 20px;
+  background: #202124;
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  font-family: var(--dl-font);
 }
 
-/* Headings */
+.vc-center {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.video-call-container {
+  width: 100%;
+  max-width: 480px;
+}
+
+/* Join card - Meet-style */
+.join-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 32px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.25);
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
 .join-title {
   margin: 0;
-  text-align: center;
   font-size: 22px;
-  font-weight: 800;
-  color: #232323;
+  font-weight: 700;
+  color: #202124;
+  text-align: center;
 }
 
 .join-subtitle {
-  margin: -6px 0 0;
-  text-align: center;
-  color: #666;
+  margin: 0;
   font-size: 14px;
+  color: #5f6368;
+  text-align: center;
+  line-height: 1.5;
 }
 
-/* Form */
 .join-form {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: 8px;
 }
 
 .join-label {
+  font-size: 13px;
   font-weight: 600;
-  color: #333;
+  color: #5f6368;
+}
+
+.join-form .form-control,
+.join-form input {
+  padding: 12px 16px;
+  border: 1px solid #dadce0;
+  border-radius: 8px;
+  font-size: 15px;
+  font-family: var(--dl-font);
+  background: #fff;
+}
+
+.join-form .form-control:focus,
+.join-form input:focus {
+  border-color: var(--dl-primary);
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(99, 68, 166, 0.2);
 }
 
 .join-error {
-  color: #dc3545;
   font-size: 13px;
+  color: #d93025;
 }
 
-/* Actions: evenly spaced, consistent sizing */
 .join-actions {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+  display: flex;
   gap: 12px;
-  margin-top: 6px;
+  margin-top: 8px;
 }
 
-.btn-cta,
-.btn-ghost {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  height: 42px;
-  border-radius: 12px;
-  font-weight: 700;
-  font-size: 15px;
-  border: none;
-  transition: transform 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
-  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.10);
-}
-
-/* Primary action */
-.btn-cta {
-  background: #5b3caf;        /* your app purple */
+.join-actions .btn-cta {
+  flex: 1;
+  padding: 12px 24px;
+  background: var(--dl-primary);
   color: #fff;
-}
-.btn-cta:hover {
-  background: #4d3393;
-  transform: translateY(-1px);
-}
-
-/* Secondary action */
-.btn-ghost {
-  background: #e9e9f3;
-  color: #2c2c34;
-}
-.btn-ghost:hover {
-  background: #dedff2;
-  transform: translateY(-1px);
+  border: none;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: var(--dl-font);
+  transition: background 0.2s;
 }
 
-/* Responsive stacking */
-@media (max-width: 560px) {
-  .join-actions {
-    grid-template-columns: 1fr;
-  }
+.join-actions .btn-cta:hover {
+  background: var(--dl-primary-dark);
+}
+
+.join-actions .back-to-dashboard {
+  flex: 0;
+  min-width: auto;
 }
