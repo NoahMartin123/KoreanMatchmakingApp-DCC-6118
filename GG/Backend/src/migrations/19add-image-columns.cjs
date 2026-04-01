@@ -1,8 +1,10 @@
+'use strict';
+
 // add-image-columns.mjs
 // Place in: GG/Backend/src/migrations/
 // Run with: npx sequelize-cli db:migrate (from GG/Backend/)
 
-export default {
+module.exports = {
   async up(queryInterface, Sequelize) {
     // Add profileImage to useraccount
     await queryInterface.addColumn('useraccount', 'profileImage', {
@@ -24,5 +26,5 @@ export default {
   async down(queryInterface) {
     await queryInterface.removeColumn('useraccount', 'profileImage');
     await queryInterface.removeColumn('Team', 'teamImage');
-  },
+  }
 };

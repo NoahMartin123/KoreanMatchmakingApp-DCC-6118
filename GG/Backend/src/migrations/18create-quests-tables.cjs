@@ -1,6 +1,6 @@
+'use strict';
 
-
-export default {
+module.exports = {
   async up(queryInterface, Sequelize) {
 
     // ── Quest definitions ──
@@ -169,5 +169,5 @@ export default {
     await queryInterface.dropTable('TeamQuestProgress');
     await queryInterface.dropTable('UserQuestProgress');
     await queryInterface.dropTable('Quest');
-  },
+  }
 };

@@ -7,15 +7,19 @@ import { useTranslator } from '../context/TranslatorContext';
 import './NavBar.css';
 
 const NAV_LINKS = [
-  { label: 'Home',         path: '/Dashboard' },
-  { label: 'Games',        path: '/GameSelection' },
-  { label: 'Friends',      path: '/FriendsList' },
-  { label: 'Challenges',   path: '/Challenges' },
-  { label: 'Teams',        path: '/TeamLobby' },
-  { label: 'Scheduler',    path: '/Scheduler' },
-  { label: 'AI Chat',      path: '/Assistant' },
-  { label: 'Transcripts',  path: '/TranscriptView' },
-  { label: 'Profile',     path: '/UpdateProfile' },
+  { label: 'Home', path: '/Dashboard' },
+  { label: 'Games', path: '/GameSelection' },
+  { label: 'Friends', path: '/FriendsList' },
+  { label: 'Find Friends', path: '/FriendSearch' },
+  { label: 'Calls', path: '/Videocall' },
+  { label: 'Translator', path: '/Translator' },
+  { label: 'User Report', path: '/UserReport' },
+  { label: 'Challenges', path: '/Challenges' },
+  { label: 'Teams', path: '/TeamLobby' },
+  { label: 'Scheduler', path: '/Scheduler' },
+  { label: 'AI Chat', path: '/Assistant' },
+  { label: 'Transcripts', path: '/TranscriptView' },
+  { label: 'Profile', path: '/UpdateProfile' },
 ];
  
 // Width reserved for hamburger button when it appears

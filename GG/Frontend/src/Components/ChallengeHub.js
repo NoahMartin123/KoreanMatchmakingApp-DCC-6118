@@ -27,8 +27,8 @@ function ChallengeHub() {
   const [difficulty, setDifficulty] = useState('Beginner');
   const [friends, setFriends] = useState([]);
 
-  const loadData = async () => {
-    setLoading(true);
+  const loadData = async (isInitial = false) => {
+    if (isInitial) setLoading(true);
     try {
       const [challengeData, statsData] = await Promise.all([
         getUserChallenges(id),
@@ -39,7 +39,7 @@ function ChallengeHub() {
     } catch (err) {
       console.error('Failed to load challenges:', err);
     } finally {
-      setLoading(false);
+      if (isInitial) setLoading(false);
     }
   };
 
@@ -62,12 +62,13 @@ function ChallengeHub() {
 
   // Poll so both players see status updates without refreshing.
   useEffect(() => {
+    if (!id) return;
     let mounted = true;
     const tick = async () => {
       if (!mounted) return;
       await loadData();
     };
-    tick();
+    loadData(true);
     const t = setInterval(tick, 5000);
     return () => {
       mounted = false;

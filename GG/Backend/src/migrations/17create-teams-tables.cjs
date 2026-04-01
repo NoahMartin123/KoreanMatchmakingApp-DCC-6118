@@ -1,6 +1,6 @@
+'use strict';
 
-
-export default {
+module.exports = {
   async up(queryInterface, Sequelize) {
     // Create Team table
     await queryInterface.createTable('Team', {
@@ -73,5 +73,5 @@ export default {
   async down(queryInterface) {
     await queryInterface.dropTable('TeamMember');
     await queryInterface.dropTable('Team');
-  },
+  }
 };

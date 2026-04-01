@@ -109,8 +109,209 @@
   color: var(--dl-dark);
 }
 
+.dashboard-main-grid {
+  max-width: 1100px;
+  margin: 24px auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  padding: 0 24px;
+}
+
+.dashboard-left-panel,
+.dashboard-right-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.dashboard-card {
+  background: var(--dl-white);
+  border-radius: var(--dl-radius-lg);
+  padding: 20px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+  border: 1px solid rgba(0,0,0,0.08);
+}
+
+.profile-card {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.profile-avatar {
+  width: 90px;
+  height: 90px;
+  background: var(--dl-primary);
+  color: #fff;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 44px;
+  font-weight: 800;
+}
+
+.profile-details h2 {
+  margin: 0;
+  font-size: 22px;
+}
+
+.profile-details p {
+  margin: 4px 0 10px;
+  color: var(--dl-gray-dark);
+}
+
+.profile-edit-btn,
+.small-btn,
+.quick-action-btn,
+.dash-logout-btn {
+  border-radius: 8px;
+  cursor: pointer;
+  font-family: var(--dl-font);
+  font-weight: 700;
+  transition: all 0.17s ease;
+}
+
+.profile-edit-btn {
+  background: var(--dl-button);
+  color: var(--dl-white);
+  border: none;
+  padding: 8px 16px;
+  font-size: 13px;
+}
+
+.profile-edit-btn:hover {
+  opacity: 0.93;
+}
+
+.schedule-card .panel-header,
+.friends-card .panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.schedule-card h3,
+.friends-card h3,
+.shortcuts-card h3 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.small-btn {
+  background: var(--dl-white);
+  border: 1px solid var(--dl-primary);
+  color: var(--dl-primary);
+  padding: 6px 12px;
+}
+
+.small-btn:hover {
+  background: rgba(99,68,166,0.08);
+}
+
+.schedule-item,
+.friend-item {
+  margin-top: 12px;
+  padding: 12px;
+  border-radius: 10px;
+  background: #f8f4ff;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.profile-avatar img.profile-avatar-img {
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #f3f4f6;
+}
+
+.profile-avatar span {
+  display: grid;
+  place-items: center;
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  background: var(--dl-primary);
+  font-size: 44px;
+  font-weight: 800;
+  color: #fff;
+}
+
+.schedule-list {
+  max-height: 235px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.schedule-subtitle {
+  display: block;
+  color: var(--dl-gray-dark);
+  font-size: 13px;
+  margin-top: 4px;
+}
+
+.schedule-empty,
+.friend-empty {
+  margin-top: 12px;
+  color: var(--dl-gray-dark);
+  font-size: 14px;
+}
+
+.friends-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.friend-item {
+  cursor: pointer;
+}
+
+.friend-name {
+  font-weight: 800;
+  color: var(--dl-dark);
+}
+
+.friend-status {
+  font-size: 12px;
+  color: #6366f1;
+}
+
+.shortcuts-card {
+  margin: 0 auto;
+  max-width: 1100px;
+  margin-bottom: 26px;
+}
+
+.dashboard-quick-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.quick-action-btn {
+  border: 1px solid var(--dl-gray-light);
+  background: #fff;
+  color: var(--dl-dark);
+  padding: 10px;
+  font-size: 13px;
+}
+
+.quick-action-btn:hover {
+  border-color: var(--dl-primary);
+  background: rgba(99,68,166,0.08);
+}
+
 .dashboard-footer {
-  max-width: 960px;
+  max-width: 1100px;
   margin: 0 auto;
   padding: 0 24px 32px;
   display: flex;
@@ -118,16 +319,25 @@
 }
 
 .dash-logout-btn {
-  background: var(--dl-white);
-  border: 3px solid var(--dl-red);
+  background: #fff;
+  border: 1px solid var(--dl-red);
   color: var(--dl-red);
-  border-radius: var(--dl-radius);
   padding: 10px 24px;
-  font-size: 15px;
-  font-weight: 800;
-  cursor: pointer;
-  font-family: var(--dl-font);
-  transition: background 0.2s, transform 0.15s;
+  font-size: 14px;
+}
+
+.dash-logout-btn:hover {
+  background: #fff5f5;
+}
+
+@media (max-width: 960px) {
+  .dashboard-main-grid {
+    grid-template-columns: 1fr;
+  }
+  .dashboard-left-panel,
+  .dashboard-right-panel {
+    width: 100%;
+  }
 }
 
 .dash-logout-btn:hover {
