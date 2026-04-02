@@ -6,43 +6,37 @@ import { handleUserDashBoardApi } from '../Services/dashboardService';
 import { handleGetTrueFriendsList, handleGetMeetings } from '../Services/userService';
 import { getUserChallenges } from '../Services/challengeService';
 import { setUserData } from '../Utils/userData';
+import { getImageUrl } from '../Services/uploadImageService';
 import Navbar from './NavBar';
 
-const CARDS = [
-  { label: 'Edit Profile',    path: '/UpdateProfile' },
-  { label: 'Friends List',    path: '/FriendsList' },
-  { label: 'Find Friends',    path: '/FriendSearch' },
-  { label: 'Call',            path: '/Videocall' },
-  { label: 'Translator',      path: '/Translator' },
-  { label: 'User Report',     path: '/UserReport' },
-  { label: 'Scheduler',       path: '/Scheduler' },
-  { label: 'Chat Assistant',  path: '/Assistant' },
-  { label: 'Transcripts',     path: '/TranscriptView' },
-  { label: 'Games',           path: '/GameSelection' },
-  { label: 'Challenges',      path: '/Challenges' },
-  { label: 'Teams',           path: '/TeamLobby' },
-];
 
 function Dashboard() {
   const [search] = useSearchParams();
   const id = search.get("id");
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
-  const [profileImage, setProfileImage] = useState('');
+  const [profileImage, setProfileImage] = useState(null);
+  const [profileImgError, setProfileImgError] = useState(false);
   const [pendingChallenges, setPendingChallenges] = useState(0);
   const [yourTurnChallenges, setYourTurnChallenges] = useState(0);
   const [friendsList, setFriendsList] = useState([]);
   const [meetings, setMeetings] = useState([]);
   const navigate = useNavigate();
 
+
   useEffect(() => {
     const load = async () => {
       try {
         const data = await handleUserDashBoardApi(id);
         const user = data.user || {};
+        console.log('User data:', user);
+        console.log('Profile image:', user.profileImage);
         setFirstName(user.firstName || '');
         setLastName(user.lastName || '');
-        setProfileImage(user.profileImage || '');
+        if (user.profileImage) {
+          setProfileImage(user.profileImage);
+          setProfileImgError(false);
+        }
         setUserData({
           firstName: user.firstName || '',
           lastName: user.lastName || '',
@@ -90,8 +84,15 @@ function Dashboard() {
 
       try {
         const meetData = await handleGetMeetings(id);
-        setMeetings(meetData.data ? meetData.data : []);
-      } catch {
+        console.log('Meetings data:', meetData);
+        const meetingsResult = Array.isArray(meetData)
+          ? meetData
+          : Array.isArray(meetData.data)
+          ? meetData.data
+          : [];
+        setMeetings(meetingsResult);
+      } catch (error) {
+        console.log('Error fetching meetings:', error);
         setMeetings([]);
       }
     };
@@ -104,6 +105,7 @@ function Dashboard() {
   const goTo = (path) => {
     navigate({ pathname: path, search: createSearchParams({ id }).toString() });
   };
+  const getInitial   = () => firstName ? firstName.charAt(0).toUpperCase() : '?';
 
   const upcomingMeeting = meetings && meetings.length > 0 ? meetings[0] : null;
 
@@ -137,12 +139,17 @@ function Dashboard() {
         <div className="dashboard-left-panel">
           <section className="dashboard-card profile-card">
             <div className="profile-avatar">
-            {profileImage ? (
-              <img src={profileImage} alt="Profile" className="profile-avatar-img" />
-            ) : (
-              <span>{firstName.charAt(0).toUpperCase() || 'U'}</span>
-            )}
-          </div>
+                {profileImage && !profileImgError ? (
+                  <img
+                    src={getImageUrl(profileImage)}
+                    alt="Profile"
+                    style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }}
+                    onError={() => setProfileImgError(true)}
+                  />
+                ) : (
+                  getInitial()
+                )}
+                </div>
             <div className="profile-details">
               <h2>{firstName} {lastName}</h2>
               <button className="profile-edit-btn" onClick={() => goTo('/UpdateProfile')}>Edit Profile</button>

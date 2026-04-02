@@ -243,6 +243,7 @@ function Navbar({ id }) {
         <button className="nav-translator-btn" onClick={toggleTranslator}>
           Translator
         </button>
+        
       </div>
     </nav>
 

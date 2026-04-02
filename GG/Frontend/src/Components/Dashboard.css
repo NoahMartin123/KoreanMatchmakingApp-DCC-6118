@@ -142,13 +142,16 @@
 .profile-avatar {
   width: 90px;
   height: 90px;
-  background: var(--dl-primary);
-  color: #fff;
   border-radius: 50%;
-  display: grid;
-  place-items: center;
-  font-size: 44px;
+  background: var(--dl-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--dl-font);
+  font-size: 22px;
   font-weight: 800;
+  color: #fff;
+  flex-shrink: 0;
 }
 
 .profile-details h2 {
@@ -173,15 +176,14 @@
 }
 
 .profile-edit-btn {
-  background: var(--dl-button);
-  color: var(--dl-white);
-  border: none;
-  padding: 8px 16px;
-  font-size: 13px;
+  background: var(--dl-white);
+  border: 1px solid var(--dl-primary);
+  color: var(--dl-primary);
+  padding: 6px 12px;
 }
 
 .profile-edit-btn:hover {
-  opacity: 0.93;
+  background: rgba(99,68,166,0.08);
 }
 
 .schedule-card .panel-header,
